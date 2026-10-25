@@ -6,58 +6,58 @@
   <title>Skywars Suite Studio | Access Control, Whitelist & Luau Obfuscator</title>
   <meta name="description" content="Dedicated Skywars Ultimate Master Suite Studio: configure Roblox username whitelists, blacklists, DALX Key System, and obfuscate directly for Roblox executors.">
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
-  <link rel="stylesheet" href="style.css?v=4.0">
+  <link rel="stylesheet" href="style.css?v=5.0">
 </head>
 <body>
 
   <!-- Master Security Lock Gate (Operator Access Only) -->
   <div id="masterLockOverlay" class="master-lock-overlay" style="position: fixed; inset: 0; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999999; background: radial-gradient(circle at 50% 35%, rgba(13, 20, 36, 0.98), #030712 90%); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);">
 
-    <div class="lock-card glass-panel" id="lockCardBox">
-      <div class="lock-icon-wrap">
+    <div class="lock-card glass-panel" id="lockCardBox" style="width: 100%; max-width: 440px; background: radial-gradient(circle at 50% 0%, rgba(20, 30, 55, 0.95), rgba(6, 11, 24, 0.98)); border: 1.5px solid rgba(0, 240, 255, 0.45); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.95), 0 0 50px rgba(0, 240, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 2.6rem 2.2rem 2.2rem; text-align: center; position: relative; overflow: hidden;">
+      <div class="lock-icon-wrap" style="width: 82px; height: 82px; margin: 0 auto 1.5rem; border-radius: 50%; background: radial-gradient(circle, rgba(0, 240, 255, 0.22) 0%, rgba(168, 85, 247, 0.15) 60%, transparent 100%); border: 1.5px solid rgba(0, 240, 255, 0.5); box-shadow: 0 0 30px rgba(0, 240, 255, 0.35), inset 0 0 18px rgba(0, 240, 255, 0.15); display: flex; align-items: center; justify-content: center; position: relative; color: #00f0ff;">
         <div class="lock-shield-pulse"></div>
-        <svg class="lock-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <svg class="lock-icon" width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
         </svg>
       </div>
 
       <div class="lock-header">
-        <h2 class="lock-title">DALX Studio Security Gate</h2>
-        <p class="lock-subtitle">RESTRICTED ACCESS • AUTHORIZED OPERATOR ONLY</p>
+        <h2 class="lock-title" style="font-size: 1.45rem; font-weight: 800; color: #ffffff; letter-spacing: -0.02em; margin-bottom: 0.35rem; text-shadow: 0 0 20px rgba(0, 240, 255, 0.3);">DALX Studio Security Gate</h2>
+        <p class="lock-subtitle" style="font-size: 0.72rem; font-weight: 700; color: #38bdf8; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 1.7rem;">RESTRICTED ACCESS • AUTHORIZED OPERATOR ONLY</p>
       </div>
 
-      <form id="formMasterUnlock" class="lock-form" onsubmit="return false;">
-        <div class="lock-input-group">
-          <input type="password" id="inputMasterPassword" class="lock-password-input" placeholder="Enter Master Password..." autocomplete="current-password" autofocus>
-          <button type="button" id="btnTogglePasswordVis" class="btn-toggle-eye" title="Toggle password visibility">
-            <svg id="eyeIconOpen" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <form id="formMasterUnlock" class="lock-form" onsubmit="return false;" style="display: flex; flex-direction: column; gap: 1.15rem;">
+        <div class="lock-input-group" style="position: relative; width: 100%;">
+          <input type="password" id="inputMasterPassword" class="lock-password-input" placeholder="Enter Master Password..." autocomplete="current-password" autofocus style="width: 100%; background: rgba(3, 7, 18, 0.95); border: 1.5px solid rgba(0, 240, 255, 0.4); color: #00f0ff; padding: 0.95rem 3.2rem 0.95rem 1.15rem; font-size: 1.05rem; font-family: 'Fira Code', monospace; border-radius: 12px; outline: none; letter-spacing: 0.12em; box-sizing: border-box; box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 240, 255, 0.12);">
+          <button type="button" id="btnTogglePasswordVis" class="btn-toggle-eye" title="Toggle password visibility" style="position: absolute; right: 0.9rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 0.3rem; display: flex; align-items: center; justify-content: center;">
+            <svg id="eyeIconOpen" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
             </svg>
-            <svg id="eyeIconClosed" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
+            <svg id="eyeIconClosed" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
             </svg>
           </button>
         </div>
 
-        <div id="lockStatusMsg" class="lock-status-msg"></div>
+        <div id="lockStatusMsg" class="lock-status-msg" style="font-size: 0.82rem; min-height: 1.3rem; display: flex; align-items: center; justify-content: center;"></div>
 
-        <div class="lock-options-row">
-          <label class="remember-label">
-            <input type="checkbox" id="chkRememberSession" checked>
+        <div class="lock-options-row" style="display: flex; align-items: center; justify-content: flex-start; font-size: 0.82rem; color: #94a3b8;">
+          <label class="remember-label" style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; user-select: none; font-weight: 500;">
+            <input type="checkbox" id="chkRememberSession" checked style="accent-color: #00f0ff; width: 16px; height: 16px; cursor: pointer;">
             <span>Remember session on this device</span>
           </label>
         </div>
 
-        <button type="submit" id="btnUnlockStudio" class="btn-unlock">
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+        <button type="submit" id="btnUnlockStudio" class="btn-unlock" style="width: 100%; background: linear-gradient(135deg, #00f0ff 0%, #0284c7 50%, #8b5cf6 100%); color: #ffffff; font-weight: 800; font-size: 0.95rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.92rem; border-radius: 12px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.6rem; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 0 30px rgba(0, 240, 255, 0.5), 0 4px 15px rgba(0, 0, 0, 0.6); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
           </svg>
           Unlock Studio
         </button>
       </form>
 
-      <div class="lock-footer">
+      <div class="lock-footer" style="margin-top: 1.6rem; font-size: 0.72rem; color: #64748b; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 1.1rem; letter-spacing: 0.02em;">
         <span>Protected with SHA-256 Cryptographic Authentication</span>
       </div>
     </div>
