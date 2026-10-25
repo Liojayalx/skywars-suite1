@@ -1977,5 +1977,451 @@ body.is-standalone #masterLockOverlay {
   color: #fff;
 }
 
+/* ==========================================================================
+   Advanced Studio Suite: 7 Power Features
+   (Avatar Chips, Kill Switch, Script Slots, Metrics HUD, Timed Keys & HWID, Discord)
+   ========================================================================== */
+
+/* 1. Roblox Avatar Headshot Chips */
+.chip-avatar-wrap {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.35rem;
+  border: 1px solid rgba(0, 240, 255, 0.5);
+  box-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+  flex-shrink: 0;
+  background: rgba(3, 7, 18, 0.9);
+}
+
+.chip-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.chip-avatar-fallback {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #38bdf8;
+  display: none;
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.6rem 0.25rem 0.35rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+/* 2. Emergency Kill Switch */
+.btn-killswitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1.5px solid rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-killswitch:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.4);
+}
+
+.btn-killswitch.armed {
+  background: linear-gradient(135deg, #ef4444, #991b1b) !important;
+  border-color: #f87171 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.75) !important;
+  animation: ksPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes ksPulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+  50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.95); }
+}
+
+.killswitch-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #64748b;
+  transition: all 0.2s;
+}
+
+.btn-killswitch.armed .killswitch-dot {
+  background: #ffffff;
+  box-shadow: 0 0 8px #ffffff;
+}
+
+.killswitch-banner {
+  background: linear-gradient(90deg, rgba(239, 68, 68, 0.95), rgba(153, 27, 27, 0.95));
+  color: #ffffff;
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+  border-bottom: 2px solid #f87171;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.5);
+  animation: slideDownKs 0.3s ease-out;
+  flex-wrap: wrap;
+}
+
+@keyframes slideDownKs {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.ks-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ks-pulse-icon {
+  font-size: 1.25rem;
+  animation: ksIconBounce 1s infinite alternate ease-in-out;
+}
+
+@keyframes ksIconBounce {
+  from { transform: scale(1); }
+  to { transform: scale(1.2); }
+}
+
+.ks-banner-reason {
+  display: block;
+  font-size: 0.75rem;
+  color: #fecaca;
+  margin-top: 0.15rem;
+  font-style: italic;
+}
+
+.ks-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.btn-ks-deactivate {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ks-deactivate:hover {
+  background: #fff;
+  color: #dc2626;
+}
+
+.btn-ks-deploy {
+  background: #000;
+  border: 1px solid #fca5a5;
+  color: #fca5a5;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ks-deploy:hover {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* 3. Multi-Script Slots Bar */
+.studio-subbar-section {
+  padding: 0.35rem 2rem 0.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.script-slots-bar {
+  padding: 0.6rem 1.15rem;
+  background: rgba(13, 19, 33, 0.65);
+}
+
+.slots-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.slots-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+.slot-pills-list {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.slot-pills-list::-webkit-scrollbar {
+  display: none;
+}
+
+.slot-pill {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 0.32rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.slot-pill:hover {
+  background: rgba(0, 240, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(0, 240, 255, 0.4);
+}
+
+.slot-pill.active {
+  background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(168, 85, 247, 0.3));
+  color: #00f0ff;
+  border-color: #00f0ff;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+}
+
+.btn-new-slot {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px dashed rgba(16, 185, 129, 0.45);
+  color: #6ee7b7;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  border-radius: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-new-slot:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+/* 4. Cyberpunk Metrics HUD Bar */
+.metrics-hud-bar {
+  padding: 0.75rem 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(5, auto) 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  background: radial-gradient(circle at 10% 50%, rgba(13, 22, 42, 0.8), rgba(7, 10, 18, 0.95));
+  border: 1px solid rgba(0, 240, 255, 0.2);
+}
+
+.hud-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.hud-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  font-weight: 700;
+}
+
+.hud-val {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.hud-val.hud-accent {
+  color: #00f0ff;
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+.hud-meter-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 140px;
+}
+
+.hud-meter-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.hud-meter-info strong {
+  color: #10b981;
+  letter-spacing: 0.02em;
+}
+
+.hud-meter-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.hud-meter-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #00f0ff, #8b5cf6);
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+  transition: width 0.4s ease;
+}
+
+/* 5. Timed Keys Database & HWID Row Items */
+.key-row-item {
+  background: rgba(10, 14, 26, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  transition: border-color 0.2s;
+}
+
+.key-row-item:hover {
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+.key-code-text {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  color: #f5d0fe;
+  font-weight: 600;
+}
+
+.key-badges-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.key-badge-time {
+  font-size: 0.65rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 10px;
+  background: rgba(168, 85, 247, 0.2);
+  color: #d8b4fe;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  font-weight: 600;
+}
+
+.key-badge-hwid {
+  font-size: 0.65rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 10px;
+  background: rgba(0, 240, 255, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  font-weight: 600;
+}
+
+.btn-revoke-key {
+  background: none;
+  border: none;
+  color: #f87171;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  transition: all 0.2s;
+}
+
+.btn-revoke-key:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fff;
+}
+
+/* Mobile responsive rules for new components */
+@media (max-width: 860px) {
+  .studio-subbar-section {
+    padding: 0.25rem 1rem 0.4rem 1rem;
+  }
+
+  .metrics-hud-bar {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .hud-meter-col {
+    grid-column: 1 / -1;
+  }
+
+  .killswitch-banner {
+    padding: 0.65rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ks-banner-actions {
+    margin-top: 0.5rem;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .btn-ks-deactivate, .btn-ks-deploy {
+    flex: 1;
+    text-align: center;
+  }
+}
+
 
 
