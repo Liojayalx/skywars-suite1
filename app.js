@@ -160,6 +160,7 @@
   const elChkRememberSession = document.getElementById('chkRememberSession');
   const elBtnUnlockStudio = document.getElementById('btnUnlockStudio');
   const elBtnLockStudio = document.getElementById('btnLockStudio');
+  const elStudioAppWrapper = document.getElementById('studioAppWrapper');
 
   const MASTER_PASSWORD_HASH = "0d4b7506dfb2bc23edfe30def6cd8ae0550833695aa79651cc7f59701154b206";
   const AUTH_STORAGE_KEY = "dalx_master_studio_auth";
@@ -1219,7 +1220,9 @@ end
       elLockStatusMsg.textContent = '';
       elLockStatusMsg.className = 'lock-status-msg';
     }
+    if (elStudioAppWrapper) elStudioAppWrapper.style.display = 'none';
     if (elMasterLockOverlay) {
+      elMasterLockOverlay.style.display = 'flex';
       elMasterLockOverlay.classList.remove('hidden');
     }
     setTimeout(() => {
@@ -1239,7 +1242,11 @@ end
       elLockStatusMsg.className = 'lock-status-msg success';
     }
     setTimeout(() => {
-      if (elMasterLockOverlay) elMasterLockOverlay.classList.add('hidden');
+      if (elMasterLockOverlay) {
+        elMasterLockOverlay.style.display = 'none';
+        elMasterLockOverlay.classList.add('hidden');
+      }
+      if (elStudioAppWrapper) elStudioAppWrapper.style.display = 'block';
     }, 350);
   }
 
@@ -1328,9 +1335,17 @@ end
 
   function initMasterLock() {
     if (isMasterAuthenticated()) {
-      if (elMasterLockOverlay) elMasterLockOverlay.classList.add('hidden');
+      if (elMasterLockOverlay) {
+        elMasterLockOverlay.style.display = 'none';
+        elMasterLockOverlay.classList.add('hidden');
+      }
+      if (elStudioAppWrapper) elStudioAppWrapper.style.display = 'block';
     } else {
-      if (elMasterLockOverlay) elMasterLockOverlay.classList.remove('hidden');
+      if (elStudioAppWrapper) elStudioAppWrapper.style.display = 'none';
+      if (elMasterLockOverlay) {
+        elMasterLockOverlay.style.display = 'flex';
+        elMasterLockOverlay.classList.remove('hidden');
+      }
       setTimeout(() => {
         if (elInputMasterPassword) elInputMasterPassword.focus();
       }, 150);
