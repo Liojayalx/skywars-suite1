@@ -1,6 +1,6 @@
 # 🛡️ Skywars Suite Studio (v3.2 Master Access Hub)
 
-**Live Studio Web App**: [https://danescob724-afk.github.io/skywars-suite1/](https://danescob724-afk.github.io/skywars-suite1/)
+
 
 **Skywars Suite Studio** is a dedicated web application and protection studio engineered specifically around the **Skywars Ultimate Master Suite** and Roblox Luau security.
 
