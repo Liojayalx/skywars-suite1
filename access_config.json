@@ -5,15 +5,16 @@
   "whitelisted": [
     "724e72411",
     "Synitzynnx",
-    "777_Z1e7x",
     "Condrago321",
     "zwooombiiee",
-    "pandasweetgirl15"
+    "pandasweetgirl15",
+    "777_Z1e7x"
   ],
   "banned": [],
   "key": "DORKSTHATAINTWHITELISTED",
   "whitelistSkipsKey": true,
   "whitelistOnlyMode": false,
   "kickOnFail": true,
-  "notifications": true
+  "notifications": true,
+  "lastUpdated": "2026-10-25T18:42:35.609Z"
 }
