@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skywars Suite Studio | Access Control, Whitelist & Luau Obfuscator</title>
+  <meta name="description" content="Dedicated Skywars Ultimate Master Suite Studio: configure Roblox username whitelists, blacklists, DALX Key System, and obfuscate directly for Roblox executors.">
+  <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Master Security Lock Gate (Operator Access Only) -->
+  <div id="masterLockOverlay" class="master-lock-overlay">
+    <div class="lock-card glass-panel" id="lockCardBox">
+      <div class="lock-icon-wrap">
+        <div class="lock-shield-pulse"></div>
+        <svg class="lock-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+
+      <div class="lock-header">
+        <h2 class="lock-title">DALX Studio Security Gate</h2>
+        <p class="lock-subtitle">RESTRICTED ACCESS • AUTHORIZED OPERATOR ONLY</p>
+      </div>
+
+      <form id="formMasterUnlock" class="lock-form" onsubmit="return false;">
+        <div class="lock-input-group">
+          <input type="password" id="inputMasterPassword" class="lock-password-input" placeholder="Enter Master Password..." autocomplete="current-password" autofocus>
+          <button type="button" id="btnTogglePasswordVis" class="btn-toggle-eye" title="Toggle password visibility">
+            <svg id="eyeIconOpen" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+            <svg id="eyeIconClosed" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display: none;">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+            </svg>
+          </button>
+        </div>
+
+        <div id="lockStatusMsg" class="lock-status-msg"></div>
+
+        <div class="lock-options-row">
+          <label class="remember-label">
+            <input type="checkbox" id="chkRememberSession" checked>
+            <span>Remember session on this device</span>
+          </label>
+        </div>
+
+        <button type="submit" id="btnUnlockStudio" class="btn-unlock">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+          </svg>
+          Unlock Studio
+        </button>
+      </form>
+
+      <div class="lock-footer">
+        <span>Protected with SHA-256 Cryptographic Authentication</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top App Navigation Bar -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo-wrap">
+        <img src="assets/logo.jpg" alt="Skywars Suite Studio Logo" class="brand-logo" id="brandLogoImg">
+      </div>
+      <div class="brand-text">
+        <h1>Skywars Suite Studio <span class="version-badge">v3.2 Master Access</span></h1>
+        <div class="brand-subtitle">Roblox Luau Obfuscation &amp; Dynamic Whitelist / Key System Manager</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-publish-github" id="btnPublishGithub" title="Push obfuscated build directly to GitHub repository">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+        </svg>
+        🚀 Publish to GitHub
+      </button>
+      <button class="btn-sync-executor" id="btnTopSync">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+        Save &amp; Sync to Executor
+      </button>
+      <button class="nav-btn btn-lock-studio" id="btnLockStudio" title="Lock Studio Session">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        Lock
+      </button>
+      <button class="nav-btn" id="btnCompatModal">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+        Luau Engine Info
+      </button>
+    </div>
+  </header>
+
+  <!-- Dedicated Skywars Access Control Hub -->
+  <section class="hub-section">
+    <div class="access-control-hub">
+      
+      <!-- Card 1: Whitelisted Users -->
+      <div class="glass-panel access-card whitelist-card">
+        <div class="card-title-row">
+          <span class="card-title-text">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#10b981">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Roblox Whitelist
+          </span>
+          <span class="badge-count green" id="whitelistCount">6 users</span>
+        </div>
+
+        <div class="user-input-group">
+          <input type="text" id="inputWhitelistUser" class="user-input" placeholder="Type Roblox username...">
+          <button class="btn-add green" id="btnAddWhitelist">+ Add User</button>
+        </div>
+
+        <div class="quick-suggestions">
+          <span>Quick:</span>
+          <button class="quick-btn" data-user="724e72411">+ 724e72411 (You)</button>
+          <button class="quick-btn" data-user="Synitzynnx">+ Synitzynnx</button>
+          <button class="quick-btn" data-user="777_Z1e7x">+ 777_Z1e7x</button>
+          <button class="quick-btn" data-user="Condrago321">+ Condrago321</button>
+          <button class="quick-btn" data-user="zwooombiiee">+ zwooombiiee</button>
+          <button class="quick-btn" data-user="pandasweetgirl15">+ pandasweetgirl15</button>
+        </div>
+
+        <div class="user-chips-container" id="whitelistChips"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.3rem; border-top: 1px solid rgba(255,255,255,0.06);">
+          <div class="toggle-item" style="padding: 0;">
+            <div class="toggle-info">
+              <span class="toggle-title" style="font-size: 0.78rem;">Whitelist Skips Key</span>
+              <span class="toggle-desc" style="font-size: 0.68rem;">Whitelisted users load automatically with no key prompt</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="optWhitelistSkipsKey" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-item" style="padding: 0;">
+            <div class="toggle-info">
+              <span class="toggle-title" style="font-size: 0.78rem;">Whitelist-Only Mode</span>
+              <span class="toggle-desc" style="font-size: 0.68rem;">Block all non-whitelisted users entirely (no key option)</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="optWhitelistOnly">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div style="margin-top: 0.5rem; padding-top: 0.45rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
+            <span id="whitelistDeployStatus" style="font-size: 0.7rem; color: #10b981;">✓ Live on GitHub</span>
+            <button class="btn-quick-deploy green" id="btnQuickDeployWhitelist" title="Compile and push updated whitelist to GitHub and Roblox loadstring immediately">
+              ⚡ Deploy to Roblox
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Card 2: Banned Users (Blacklist) -->
+      <div class="glass-panel access-card banned-card">
+        <div class="card-title-row">
+          <span class="card-title-text">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#ef4444">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+            </svg>
+            Banned Users (Blacklist)
+          </span>
+          <span class="badge-count red" id="bannedCount">0 banned</span>
+        </div>
+
+        <div class="user-input-group">
+          <input type="text" id="inputBannedUser" class="user-input" placeholder="Type banned username...">
+          <button class="btn-add red" id="btnAddBanned">+ Ban User</button>
+        </div>
+
+        <div class="quick-suggestions">
+          <span>Sample:</span>
+          <button class="quick-btn" data-ban="BadUser123">+ BadUser123</button>
+          <button class="quick-btn" data-ban="Troller99">+ Troller99</button>
+        </div>
+
+        <div class="user-chips-container" id="bannedChips"></div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.3rem; border-top: 1px solid rgba(255,255,255,0.06);">
+          <div class="toggle-item" style="padding: 0;">
+            <div class="toggle-info">
+              <span class="toggle-title" style="font-size: 0.78rem;">Kick Banned Players</span>
+              <span class="toggle-desc" style="font-size: 0.68rem;">Execute LocalPlayer:Kick() if blacklisted</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="optKickBanned">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div style="font-size: 0.7rem; color: var(--text-dim);">
+            Blacklist check always executes first. Nothing bypasses a ban.
+          </div>
+          <div style="margin-top: 0.5rem; padding-top: 0.45rem; border-top: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between;">
+            <span id="banDeployStatus" style="font-size: 0.7rem; color: #10b981;">✓ Live on GitHub</span>
+            <button class="btn-quick-deploy" id="btnQuickDeployBans" title="Compile and push updated ban list to GitHub and Roblox loadstring immediately">
+              ⚡ Deploy Bans to Roblox
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Card 3: DALX Key System Configuration -->
+      <div class="glass-panel access-card keysystem-card">
+        <div class="card-title-row">
+          <span class="card-title-text">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="#c084fc">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+            </svg>
+            DALX Key System
+          </span>
+          <span class="badge-count purple">GUI Dialog</span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.4rem;">
+          <label class="form-label" style="font-size: 0.76rem;">Required Access Key</label>
+          <input type="text" id="inputKeyString" class="user-input" value="DORKSTHATAINTWHITELISTED" spellcheck="false">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.4rem;">
+          <label class="form-label" style="font-size: 0.76rem;">Key Storage File</label>
+          <input type="text" id="inputKeyFile" class="user-input" value="SkywarsSuite_Key.txt" spellcheck="false">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.35rem; padding-top: 0.2rem;">
+          <div class="toggle-item" style="padding: 0;">
+            <div class="toggle-info">
+              <span class="toggle-title" style="font-size: 0.78rem;">Kick on Key Cancel / Fail</span>
+              <span class="toggle-desc" style="font-size: 0.68rem;">Kick from server if key dialog is closed, invalid, or timed out</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="optKickOnFail" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-item" style="padding: 0;">
+            <div class="toggle-info">
+              <span class="toggle-title" style="font-size: 0.78rem;">Remember Key on Client</span>
+              <span class="toggle-desc" style="font-size: 0.68rem;">Save key to file (disable to require key every session)</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="optRememberKey">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-item" style="padding: 0;">
+            <div class="toggle-info">
+              <span class="toggle-title" style="font-size: 0.78rem;">In-Game Roblox Banners</span>
+              <span class="toggle-desc" style="font-size: 0.68rem;">Notify "Whitelist Verified" / "Saved Key Loaded"</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="optNotifications" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Workspace Container: Source Editor | Settings Panel | Protected Output -->
+  <main class="workspace-container">
+    
+    <!-- Left Column: Source Input -->
+    <section class="editor-column glass-panel">
+      <div class="editor-header">
+        <div class="editor-title">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+          </svg>
+          Skywars Master Suite Source (Luau)
+          <span class="editor-badge" id="sourceBadge" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">Hub Synced</span>
+        </div>
+        <div class="editor-actions">
+          <button class="nav-btn" id="btnRegenSource" title="Re-generate script from Access Control Hub" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;">
+            🔄 Rebuild from Hub
+          </button>
+          <button class="action-icon-btn" id="btnUpload" title="Upload custom script">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+          </button>
+          <input type="file" id="fileInput" accept=".lua,.luau,.txt" style="display: none;">
+          <button class="action-icon-btn" id="btnClear" title="Clear Code">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="editor-body">
+        <div class="line-numbers" id="inputLines"></div>
+        <textarea id="inputLua" class="code-textarea" spellcheck="false" placeholder="Loading Skywars Master Suite..."></textarea>
+      </div>
+
+      <div class="editor-footer">
+        <span id="inputStats">0 lines | 0 chars</span>
+        <button class="nav-btn" id="btnRunSource" style="padding: 0.25rem 0.65rem; font-size: 0.76rem;">
+          <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          Test Run Source
+        </button>
+      </div>
+    </section>
+
+    <!-- Center Column: Obfuscation Controls & Settings -->
+    <aside class="options-column">
+      
+      <!-- Primary Action Card -->
+      <div class="glass-panel action-card">
+        <button class="btn-obfuscate-main" id="btnObfuscate">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          Obfuscate Skywars Suite
+        </button>
+        <div style="font-size: 0.74rem; text-align: center; color: var(--text-dim);">
+          Hotkey: <kbd style="background: rgba(255,255,255,0.08); padding: 0.15rem 0.4rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);">Ctrl + Enter</kbd>
+        </div>
+      </div>
+
+      <!-- Settings Panel -->
+      <div class="glass-panel settings-panel">
+        <div class="panel-header">
+          <span>Protection Configuration</span>
+          <span class="dialect-badge" id="dialectBadge">Roblox Luau</span>
+        </div>
+
+        <input type="hidden" id="optDialect" value="luau">
+
+        <!-- Variable Renaming -->
+        <div class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-title">Identifier Mangling</span>
+            <span class="toggle-desc">Rename local vars, params &amp; loops</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="optRename" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Variable Style Selector -->
+        <div class="form-group">
+          <label class="form-label" for="optVarStyle">Identifier Style</label>
+          <select id="optVarStyle" class="form-select">
+            <option value="hex" selected>Hexadecimal (_0x4f1a)</option>
+            <option value="barcode">Barcode (IlIIl1ll)</option>
+            <option value="ghost">Ghost Underscores (____)</option>
+            <option value="alpha">Alpha Cryptic (oO0O_1)</option>
+            <option value="random">Random Hash (_x9a4f)</option>
+          </select>
+        </div>
+
+        <!-- String Encryption -->
+        <div class="form-group">
+          <label class="form-label" for="optStrings">String Protection</label>
+          <select id="optStrings" class="form-select">
+            <option value="poly" selected>Polymorphic Shift Cipher (O(1) Cache)</option>
+            <option value="hex">Decimal Byte Escapes (\ddd)</option>
+            <option value="none">Plain (No Encryption)</option>
+          </select>
+        </div>
+
+        <!-- Number Obfuscation -->
+        <div class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-title">Number Virtualization</span>
+            <span class="toggle-desc">Decompose numbers into math</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="optNumbers" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Control Flow Flattening -->
+        <div class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-title">Control Flow Dispatcher</span>
+            <span class="toggle-desc">State machine loop &amp; dispatcher</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="optControlFlow" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Anti-Tamper & Anti-Hook -->
+        <div class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-title">Anti-Tamper &amp; Hooking</span>
+            <span class="toggle-desc">Universal standard API integrity check</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="optAntiTamper" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Minification -->
+        <div class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-title">Minify &amp; Strip Comments</span>
+            <span class="toggle-desc">Remove comments &amp; whitespace</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="optMinify" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <!-- Watermark Header -->
+        <div class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-title">Watermark Header</span>
+            <span class="toggle-desc">Security disclaimer header</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="optWatermark" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="watermarkText">Watermark Banner</label>
+          <input type="text" id="watermarkText" class="form-select" value="-- Protected by LuaShield v3.2 Pro (Skywars Ultimate Edition)">
+        </div>
+
+      </div>
+
+      <!-- Live Security Metrics -->
+      <div class="glass-panel metrics-card">
+        <div class="panel-header">
+          <span>Protection Telemetry</span>
+          <span class="entropy-badge" id="statEntropy">High</span>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-box">
+            <div class="metric-label">Source Size</div>
+            <div class="metric-val" id="statOriginal">0.00 KB</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Protected Size</div>
+            <div class="metric-val" id="statObfuscated">0.00 KB</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Size Ratio</div>
+            <div class="metric-val" id="statRatio">0%</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-label">Build Time</div>
+            <div class="metric-val" id="statTime">0 ms</div>
+          </div>
+        </div>
+
+        <div style="font-size: 0.74rem; color: var(--text-dim); text-align: center;" id="statVariables">
+          0 vars, 0 strings
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Right Column: Obfuscated Output -->
+    <section class="editor-column glass-panel">
+      <div class="editor-header">
+        <div class="editor-title">
+          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+          Protected Output (Roblox Luau)
+          <span class="sync-status-badge" id="syncStatus">
+            <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            Ready
+          </span>
+        </div>
+        <div class="editor-actions">
+          <button class="nav-btn" id="btnSyncExecutor" title="Save directly to Real executor workspace & scripts" style="padding: 0.25rem 0.65rem; font-size: 0.76rem; border-color: #10b981; color: #10b981;">
+            ⚡ Sync to Executor
+          </button>
+          <button class="action-icon-btn" id="btnCopy" title="Copy Obfuscated Code">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <button class="action-icon-btn" id="btnDownload" title="Download .luau File">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="editor-body">
+        <div class="line-numbers" id="outputLines"></div>
+        <textarea id="outputLua" class="code-textarea" readonly spellcheck="false" placeholder="-- Obfuscated code will appear here after clicking 'Obfuscate Skywars Suite'..."></textarea>
+      </div>
+
+      <div class="editor-footer">
+        <span id="outputStats">0 lines | 0 chars</span>
+        <button class="nav-btn" id="btnRunOutput" style="padding: 0.25rem 0.65rem; font-size: 0.76rem; border-color: var(--accent-cyan); color: var(--accent-cyan);">
+          <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          Test Run Protected
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Interactive Terminal / Sandbox Console Drawer -->
+  <section class="console-container">
+    <div class="sim-input-row">
+      <span style="font-size: 0.8rem; font-weight: 600; color: var(--accent-cyan);">Roblox Access Simulator:</span>
+      <input type="text" id="simUsername" class="user-input" style="max-width: 240px;" value="724e72411" placeholder="Test username...">
+      <button class="nav-btn" id="btnSimulate" style="padding: 0.3rem 0.8rem; font-size: 0.78rem; border-color: var(--accent-cyan); color: var(--accent-cyan);">
+        Simulate Access
+      </button>
+      <span style="font-size: 0.74rem; color: var(--text-dim); margin-left: auto;">Test how your Whitelist, Blacklist and Key System react to any Roblox user</span>
+    </div>
+    <div class="console-header">
+      <div class="console-title">
+        <span class="console-dot"></span>
+        Interactive Roblox Luau Sandbox Console
+      </div>
+      <div>
+        <button class="nav-btn" id="btnClearConsole" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;">Clear Logs</button>
+      </div>
+    </div>
+    <div class="console-body" id="consoleLogs">
+      <div class="log-entry stdout">
+        <span class="log-time">[System]</span>
+        <span class="log-text">Skywars Suite Studio v3.2 ready. Configure Whitelist, Blacklist, or Key above and click "Obfuscate Skywars Suite".</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Compatibility Matrix Modal -->
+  <div class="modal-overlay" id="modalCompat">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Skywars Master Suite &amp; Roblox Luau Engine Specs</h3>
+        <button class="action-icon-btn modal-close" id="modalCompatClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>⚡ Access Control Engine</h4>
+        <p>The Access Control block evaluates in one self-contained closure at the top of the script:</p>
+        <ul>
+          <li><strong>Banned Check</strong>: Always runs first. If a player is blacklisted, execution terminates immediately. Optional kick from game via <code>LocalPlayer:Kick()</code>.</li>
+          <li><strong>Whitelist Check</strong>: Case-insensitive username check. When <code>WHITELIST_SKIPS_KEY = true</code>, whitelisted accounts bypass the key dialog.</li>
+          <li><strong>DALX Key System</strong>: For non-whitelisted users, prompts for the key with a drag-and-drop dark UI. Remembers keys in <code>SkywarsSuite_Key.txt</code>.</li>
+        </ul>
+
+        <h4>🛡️ Zero-GC $O(1)$ Protection</h4>
+        <p>All strings are protected using polymorphic ciphers decoded into an $O(1)$ table cache. Heartbeat loops and render steps run with 0% FPS lag or memory GC pressure.</p>
+
+        <h4>💾 Automatic Executor Synchronization</h4>
+        <p>Clicking <strong>Save &amp; Sync to Executor</strong> writes the protected build simultaneously to your local folder and your executor's workspace &amp; scripts folders without needing manual copy-pasting.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="nav-btn" id="modalCompatOk">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direct GitHub Auto-Publisher Modal -->
+  <div class="modal-overlay" id="modalGithubSync">
+    <div class="modal-content" style="max-width: 540px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.6rem; font-weight: 700; color: #fff;">
+          <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24" style="color: var(--accent-cyan);">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+          Direct GitHub Auto-Publisher
+        </div>
+        <button class="action-icon-btn modal-close" id="modalGithubClose">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem; line-height: 1.5;">
+          Connect your GitHub repository to push updated, <strong>fully obfuscated builds</strong> directly with 1 click. You will never need to manually commit or upload files again.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 0.8rem;">
+          <label class="form-label" style="font-size: 0.78rem;">
+            GitHub Personal Access Token (PAT)
+            <a href="https://github.com/settings/tokens" target="_blank" style="color: var(--accent-cyan); font-weight: normal; font-size: 0.75rem;">Generate Token &nearr;</a>
+          </label>
+          <input type="password" id="inputGhToken" class="user-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" spellcheck="false">
+          <span style="font-size: 0.68rem; color: var(--text-dim); margin-top: 0.2rem;">Needs standard <code>repo</code> permissions. Saved securely only inside your browser.</span>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 0.8rem;">
+          <div class="form-group">
+            <label class="form-label" style="font-size: 0.78rem;">GitHub Username / Org</label>
+            <input type="text" id="inputGhOwner" class="user-input" placeholder="e.g. YourUsername" spellcheck="false">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size: 0.78rem;">Repository Name</label>
+            <input type="text" id="inputGhRepo" class="user-input" placeholder="e.g. SkywarsSuite" spellcheck="false">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 0.8rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label class="form-label" style="font-size: 0.78rem;">Branch</label>
+            <input type="text" id="inputGhBranch" class="user-input" value="main" spellcheck="false">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size: 0.78rem;">File Path in Repo</label>
+            <input type="text" id="inputGhFilePath" class="user-input" value="skywars_obfuscated.lua" spellcheck="false">
+          </div>
+        </div>
+
+        <!-- Live Loadstring Preview Box -->
+        <div style="background: rgba(0,0,0,0.45); border: 1px solid rgba(0,240,255,0.25); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.8rem;">
+          <div style="font-size: 0.74rem; font-weight: 600; color: var(--accent-cyan); margin-bottom: 0.35rem; display: flex; justify-content: space-between; align-items: center;">
+            <span>Permanent Roblox Loadstring:</span>
+            <button id="btnCopyLoadstring" class="quick-btn" style="font-size: 0.68rem; padding: 0.15rem 0.5rem;">Copy Loadstring</button>
+          </div>
+          <code id="textLoadstringPreview" style="font-size: 0.72rem; color: #a7f3d0; word-break: break-all; display: block; font-family: var(--font-mono); line-height: 1.4;">
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/OWNER/REPO/main/skywars_obfuscated.lua?t=" .. tick()))()
+          </code>
+        </div>
+
+        <div id="ghSyncStatusMsg" style="font-size: 0.78rem; min-height: 1.2rem; margin-bottom: 0.5rem;"></div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 0.8rem;">
+        <button class="nav-btn" id="btnSaveGhSettings">Save Settings</button>
+        <button class="btn-publish-github" id="btnConfirmPublishGh" style="flex: 1; justify-content: center;">
+          🚀 Publish Obfuscated Code Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
+  <script src="obfuscator.js"></script>
+  <script src="lua-runner.js"></script>
+  <script src="skywars_body.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+
