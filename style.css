@@ -1218,7 +1218,13 @@ input:checked + .slider:before {
 .master-lock-overlay {
   position: fixed;
   inset: 0;
-  z-index: 999999;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999999;
   background: radial-gradient(circle at 50% 35%, rgba(13, 20, 36, 0.98), #030712 90%);
   backdrop-filter: blur(28px);
   -webkit-backdrop-filter: blur(28px);
@@ -1226,14 +1232,22 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+  box-sizing: border-box;
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s ease;
 }
 
 .master-lock-overlay.hidden {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  display: none !important;
 }
+
+#studioAppWrapper {
+  width: 100%;
+  min-height: 100vh;
+}
+
 
 .lock-card {
   width: 100%;
