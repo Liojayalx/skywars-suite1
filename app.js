@@ -1625,21 +1625,46 @@ end
   }
 
   // Modal Handlers
-  elBtnCompatModal.addEventListener('click', () => {
-    elModalCompat.classList.add('active');
-  });
+  function openModal(modalEl) {
+    if (!modalEl) return;
+    modalEl.style.display = 'flex';
+    void modalEl.offsetWidth;
+    modalEl.classList.add('active');
+  }
 
-  elModalCompatClose.addEventListener('click', () => {
-    elModalCompat.classList.remove('active');
-  });
+  function closeModal(modalEl) {
+    if (!modalEl) return;
+    modalEl.classList.remove('active');
+    setTimeout(() => {
+      if (!modalEl.classList.contains('active')) {
+        modalEl.style.display = 'none';
+      }
+    }, 260);
+  }
 
-  elModalCompatOk.addEventListener('click', () => {
-    elModalCompat.classList.remove('active');
-  });
+  if (elBtnCompatModal && elModalCompat) {
+    elBtnCompatModal.addEventListener('click', () => {
+      openModal(elModalCompat);
+    });
+  }
 
-  elModalCompat.addEventListener('click', (e) => {
-    if (e.target === elModalCompat) elModalCompat.classList.remove('active');
-  });
+  if (elModalCompatClose) {
+    elModalCompatClose.addEventListener('click', () => {
+      closeModal(elModalCompat);
+    });
+  }
+
+  if (elModalCompatOk) {
+    elModalCompatOk.addEventListener('click', () => {
+      closeModal(elModalCompat);
+    });
+  }
+
+  if (elModalCompat) {
+    elModalCompat.addEventListener('click', (e) => {
+      if (e.target === elModalCompat) closeModal(elModalCompat);
+    });
+  }
 
   // ---------------------------------------------------------------------------
   // 8.4. ADVANCED STUDIO POWER MODULES
@@ -1707,6 +1732,12 @@ end
     if (elChkKillSwitchArmed) {
       elChkKillSwitchArmed.checked = isArmed;
     }
+    if (elKsModalDesc) {
+      elKsModalDesc.textContent = isArmed 
+        ? '🚨 Armed (All in-game sessions will be blocked)' 
+        : 'Currently Disabled (Scripts run normally)';
+      elKsModalDesc.style.color = isArmed ? '#f87171' : 'var(--text-muted)';
+    }
     if (elInputKillSwitchReason) {
       elInputKillSwitchReason.value = accessConfig.killSwitchReason || '';
     }
@@ -1725,21 +1756,44 @@ end
 
   function initKillSwitchController() {
     if (elBtnToggleKillSwitch) {
-      elBtnToggleKillSwitch.addEventListener('click', () => {
+      elBtnToggleKillSwitch.addEventListener('click', (e) => {
+        e.preventDefault();
         syncKillSwitchUI();
-        if (elModalKillSwitch) elModalKillSwitch.classList.add('active');
+        openModal(elModalKillSwitch);
+        setTimeout(() => {
+          if (elInputKillSwitchPassword) elInputKillSwitchPassword.focus();
+        }, 150);
       });
     }
 
     if (elBtnCloseKsModal) {
       elBtnCloseKsModal.addEventListener('click', () => {
-        if (elModalKillSwitch) elModalKillSwitch.classList.remove('active');
+        closeModal(elModalKillSwitch);
       });
     }
 
     if (elBtnCancelKillSwitch) {
       elBtnCancelKillSwitch.addEventListener('click', () => {
-        if (elModalKillSwitch) elModalKillSwitch.classList.remove('active');
+        closeModal(elModalKillSwitch);
+      });
+    }
+
+    if (elModalKillSwitch) {
+      elModalKillSwitch.addEventListener('click', (e) => {
+        if (e.target === elModalKillSwitch) {
+          closeModal(elModalKillSwitch);
+        }
+      });
+    }
+
+    if (elChkKillSwitchArmed) {
+      elChkKillSwitchArmed.addEventListener('change', () => {
+        if (elKsModalDesc) {
+          elKsModalDesc.textContent = elChkKillSwitchArmed.checked 
+            ? '🚨 Armed (All in-game sessions will be blocked)' 
+            : 'Currently Disabled (Scripts run normally)';
+          elKsModalDesc.style.color = elChkKillSwitchArmed.checked ? '#f87171' : 'var(--text-muted)';
+        }
       });
     }
 
@@ -1749,6 +1803,15 @@ end
         elInputKillSwitchPassword.type = isPass ? 'text' : 'password';
         if (elKsPassEyeOpen) elKsPassEyeOpen.style.display = isPass ? 'none' : 'block';
         if (elKsPassEyeClosed) elKsPassEyeClosed.style.display = isPass ? 'block' : 'none';
+      });
+    }
+
+    if (elInputKillSwitchPassword) {
+      elInputKillSwitchPassword.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (elBtnSaveKillSwitch) elBtnSaveKillSwitch.click();
+        }
       });
     }
 
@@ -1774,7 +1837,7 @@ end
         syncKillSwitchUI();
         refreshSourceEditor();
         markPendingChanges();
-        if (elModalKillSwitch) elModalKillSwitch.classList.remove('active');
+        closeModal(elModalKillSwitch);
         if (armed) {
           showToast('🚨 Remote Emergency Kill Switch ARMED! Deploy to Roblox to block in-game users.', 'error');
         } else {
@@ -1830,19 +1893,28 @@ end
 
   function initDiscordController() {
     if (elBtnOpenDiscordConfig) {
-      elBtnOpenDiscordConfig.addEventListener('click', () => {
+      elBtnOpenDiscordConfig.addEventListener('click', (e) => {
+        e.preventDefault();
         syncDiscordUI();
         if (elDiscordTestStatusMsg) {
           elDiscordTestStatusMsg.textContent = '';
           elDiscordTestStatusMsg.className = 'test-status-msg';
         }
-        if (elModalDiscordConfig) elModalDiscordConfig.classList.add('active');
+        openModal(elModalDiscordConfig);
       });
     }
 
     if (elBtnCloseDiscordModal) {
       elBtnCloseDiscordModal.addEventListener('click', () => {
-        if (elModalDiscordConfig) elModalDiscordConfig.classList.remove('active');
+        closeModal(elModalDiscordConfig);
+      });
+    }
+
+    if (elModalDiscordConfig) {
+      elModalDiscordConfig.addEventListener('click', (e) => {
+        if (e.target === elModalDiscordConfig) {
+          closeModal(elModalDiscordConfig);
+        }
       });
     }
 
@@ -1920,7 +1992,7 @@ end
         saveAccessConfig();
         refreshSourceEditor();
         markPendingChanges();
-        if (elModalDiscordConfig) elModalDiscordConfig.classList.remove('active');
+        closeModal(elModalDiscordConfig);
         showToast('Discord Sentinel Settings Saved & Integrated into Luau code!', 'success');
       });
     }
@@ -2027,22 +2099,31 @@ end
 
   function initTimedKeysController() {
     if (elBtnOpenKeyManager) {
-      elBtnOpenKeyManager.addEventListener('click', () => {
+      elBtnOpenKeyManager.addEventListener('click', (e) => {
+        e.preventDefault();
         renderActiveKeysList();
         if (elNewKeyResultBox) elNewKeyResultBox.style.display = 'none';
-        if (elModalKeyManager) elModalKeyManager.classList.add('active');
+        openModal(elModalKeyManager);
       });
     }
 
     if (elBtnCloseKeyModal) {
       elBtnCloseKeyModal.addEventListener('click', () => {
-        if (elModalKeyManager) elModalKeyManager.classList.remove('active');
+        closeModal(elModalKeyManager);
       });
     }
 
     if (elBtnCloseKeyManagerFooter) {
       elBtnCloseKeyManagerFooter.addEventListener('click', () => {
-        if (elModalKeyManager) elModalKeyManager.classList.remove('active');
+        closeModal(elModalKeyManager);
+      });
+    }
+
+    if (elModalKeyManager) {
+      elModalKeyManager.addEventListener('click', (e) => {
+        if (e.target === elModalKeyManager) {
+          closeModal(elModalKeyManager);
+        }
       });
     }
 
@@ -2617,7 +2698,7 @@ end
       if (elGhSyncStatusMsg) {
         elGhSyncStatusMsg.textContent = '';
       }
-      if (elModalGithubSync) elModalGithubSync.classList.add('active');
+      openModal(elModalGithubSync);
     });
   }
 
@@ -2635,14 +2716,14 @@ end
 
   if (elModalGithubClose) {
     elModalGithubClose.addEventListener('click', () => {
-      if (elModalGithubSync) elModalGithubSync.classList.remove('active');
+      closeModal(elModalGithubSync);
     });
   }
 
   if (elModalGithubSync) {
     elModalGithubSync.addEventListener('click', (e) => {
       if (e.target === elModalGithubSync) {
-        elModalGithubSync.classList.remove('active');
+        closeModal(elModalGithubSync);
       }
     });
   }
@@ -2742,11 +2823,30 @@ end
   }
 
   // ---------------------------------------------------------------------------
+  // 8.7. ACCESSIBILITY & RESPONSIVE TOGGLE ROW INTERACTION
+  // ---------------------------------------------------------------------------
+
+  function initToggleRowClicks() {
+    document.querySelectorAll('.toggle-item').forEach(item => {
+      item.style.cursor = 'pointer';
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.switch') || e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'A') return;
+        const chk = item.querySelector('input[type="checkbox"]');
+        if (chk && !chk.disabled) {
+          chk.checked = !chk.checked;
+          chk.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // 9. INITIAL BOOT
   // ---------------------------------------------------------------------------
 
   initMasterLock();
   initIosStandaloneUX();
+  initToggleRowClicks();
   loadAccessConfig();
   syncAccessConfigToUI();
   initKillSwitchController();
