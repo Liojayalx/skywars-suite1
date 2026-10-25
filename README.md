@@ -42,12 +42,4 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/danescob724-afk/skywa
 ### 4. Maximum Fortress v5.2 Obfuscation Engine
 - **Stage 1 (AST Renaming)**: Barcode identifiers (`_Il1l_...`), hex number decomposition, decimal byte escaping.
 - **Stage 2 (Autokey VM Matrix)**: Encrypted into 55 high-entropy VM chunks with rolling Autokey ciphers and ephemeral heap purging.
-- **Anti-Tamper & Metamethod Shield**: Environment verification protecting all hook targets.
-
----
-
-## 🌐 Web Studio Access
-
-- **Online**: [https://danescob724-afk.github.io/skywars-suite1/](https://danescob724-afk.github.io/skywars-suite1/)
-- **Localhost**: `http://127.0.0.1:8080/`
-- **Master Password**: `De996477_`
+- **Anti-Tamper & Metamethod Shield**: Environment verification protecting all hook target
