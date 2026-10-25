@@ -1139,6 +1139,9 @@ end
   });
 
   elBtnRegenSource.addEventListener('click', () => {
+    activeSlotId = null;
+    saveScriptSlots();
+    renderScriptSlots();
     refreshSourceEditor();
     showToast('Source rebuilt with current Access Control settings!', 'info');
   });
@@ -2209,29 +2212,39 @@ end
   }
 
   // E. Multi-Script Profile Slot Manager
-  const SCRIPT_SLOTS_KEY = 'dalx_script_slots_v2';
-  const ACTIVE_SLOT_KEY = 'dalx_active_slot_id_v2';
+  const SCRIPT_SLOTS_KEY = 'dalx_script_slots_v3';
+  const ACTIVE_SLOT_KEY = 'dalx_active_slot_id_v3';
 
   let scriptSlots = [
-    { id: 'skywars-master', name: 'Skywars Ultimate', icon: '⚔️', isDefault: true },
-    { id: 'bedwars-ghost', name: 'Bedwars Ghost', icon: '🛏️', isDefault: false, customCode: '-- Bedwars Ghost Profile\nprint("Bedwars Ghost active")\n' },
     { id: 'arsenal-aim', name: 'Arsenal Aimbot', icon: '🎯', isDefault: false, customCode: '-- Arsenal Suite Profile\nprint("Arsenal Suite active")\n' }
   ];
-  let activeSlotId = 'skywars-master';
+  let activeSlotId = null;
 
   function loadScriptSlots() {
     try {
+      // Clear legacy slot cache that contained Skywars Ultimate / Bedwars Ghost
+      localStorage.removeItem('dalx_script_slots_v2');
+      localStorage.removeItem('dalx_active_slot_id_v2');
+
       const saved = localStorage.getItem(SCRIPT_SLOTS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          scriptSlots = parsed;
+        if (Array.isArray(parsed)) {
+          scriptSlots = parsed.filter(s => 
+            s.id !== 'skywars-master' && 
+            s.id !== 'bedwars-ghost' && 
+            s.name !== 'Skywars Ultimate' && 
+            s.name !== 'Bedwars Ghost'
+          );
         }
       }
       const savedActive = localStorage.getItem(ACTIVE_SLOT_KEY);
       if (savedActive && scriptSlots.some(s => s.id === savedActive)) {
         activeSlotId = savedActive;
+      } else {
+        activeSlotId = null;
       }
+      saveScriptSlots();
     } catch (e) {
       console.warn('Failed loading script slots:', e);
     }
@@ -2240,7 +2253,11 @@ end
   function saveScriptSlots() {
     try {
       localStorage.setItem(SCRIPT_SLOTS_KEY, JSON.stringify(scriptSlots));
-      localStorage.setItem(ACTIVE_SLOT_KEY, activeSlotId);
+      if (activeSlotId) {
+        localStorage.setItem(ACTIVE_SLOT_KEY, activeSlotId);
+      } else {
+        localStorage.removeItem(ACTIVE_SLOT_KEY);
+      }
     } catch (e) {}
   }
 
@@ -2248,13 +2265,23 @@ end
     if (!elSlotPillsList) return;
     elSlotPillsList.innerHTML = '';
 
+    if (scriptSlots.length === 0) {
+      const emptyHint = document.createElement('span');
+      emptyHint.style.fontSize = '0.78rem';
+      emptyHint.style.color = '#64748b';
+      emptyHint.style.padding = '0.2rem 0.5rem';
+      emptyHint.textContent = 'No custom slots';
+      elSlotPillsList.appendChild(emptyHint);
+      return;
+    }
+
     scriptSlots.forEach(slot => {
       const pill = document.createElement('div');
       pill.className = `slot-pill ${slot.id === activeSlotId ? 'active' : ''}`;
       pill.innerHTML = `
         <span class="slot-icon">${slot.icon || '📜'}</span>
         <span class="slot-name">${escapeHtml(slot.name)}</span>
-        ${!slot.isDefault ? `<button type="button" class="btn-slot-delete" data-id="${slot.id}" title="Delete slot">&times;</button>` : ''}
+        <button type="button" class="btn-slot-delete" data-id="${slot.id}" title="Delete slot">&times;</button>
       `;
 
       pill.addEventListener('click', (e) => {
@@ -2269,11 +2296,15 @@ end
           if (confirm(`Delete slot "${slot.name}"?`)) {
             scriptSlots = scriptSlots.filter(s => s.id !== slot.id);
             if (activeSlotId === slot.id) {
-              activeSlotId = 'skywars-master';
+              activeSlotId = scriptSlots.length > 0 ? scriptSlots[0].id : null;
             }
             saveScriptSlots();
             renderScriptSlots();
-            switchScriptSlot(activeSlotId);
+            if (activeSlotId) {
+              switchScriptSlot(activeSlotId);
+            } else {
+              refreshSourceEditor();
+            }
             showToast(`Deleted slot "${slot.name}".`, 'info');
           }
         });
