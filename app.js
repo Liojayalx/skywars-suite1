@@ -1706,10 +1706,68 @@ end
   });
 
   // ---------------------------------------------------------------------------
+  // 8.5. IOS STANDALONE & PWA APP-MODE CONTROLLER
+  // ---------------------------------------------------------------------------
+
+  function initIosStandaloneUX() {
+    // Detect iOS devices (iPhone, iPad, iPod)
+    const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+    if (isStandalone) {
+      document.body.classList.add('is-standalone');
+      console.log('[Skywars PWA] Active in Standalone App Mode (Browser Bars Hidden)');
+    }
+
+    // Keep internal link navigation inside the standalone app frame
+    if (isStandalone) {
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest('a');
+        if (a && a.href && a.getAttribute('target') !== '_blank' && a.hostname === window.location.hostname) {
+          e.preventDefault();
+          window.location.href = a.href;
+        }
+      }, false);
+    }
+
+    // Helper banner for iOS Safari when NOT yet saved to Home Screen
+    const banner = document.getElementById('iosInstallBanner');
+    const btnClose = document.getElementById('btnCloseIosBanner');
+
+    if (banner && isIos && !isStandalone) {
+      const isDismissed = localStorage.getItem('dalx_ios_banner_dismissed');
+      if (!isDismissed) {
+        setTimeout(() => {
+          banner.style.display = 'flex';
+        }, 1200);
+      }
+    }
+
+    if (btnClose && banner) {
+      btnClose.addEventListener('click', () => {
+        banner.style.display = 'none';
+        try {
+          localStorage.setItem('dalx_ios_banner_dismissed', 'true');
+        } catch (e) {}
+      });
+    }
+
+    // Register Service Worker for PWA compliance
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.warn('[PWA] Service Worker registration:', err);
+        });
+      });
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // 9. INITIAL BOOT
   // ---------------------------------------------------------------------------
 
   initMasterLock();
+  initIosStandaloneUX();
   loadAccessConfig();
   syncAccessConfigToUI();
   loadGhCredentials();
@@ -1720,3 +1778,4 @@ end
   loadSkywarsSuiteBody();
 
 })();
+
