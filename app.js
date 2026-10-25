@@ -28,8 +28,8 @@
     killSwitchArmed: false,
     killSwitchReason: "⚠️ Skywars Suite is temporarily offline for emergency maintenance.",
     discordConfig: {
-      enabled: false,
-      webhookUrl: "",
+      enabled: true,
+      webhookUrl: "https://discord.com/api/webhooks/1563965833154396241/9YKRIxGaCID6n3Rb8sLbhly_OWMJMpuGQtRUSWvSJ8e9UT38ewCt8x1rNmArELyV3aKS",
       logWhitelisted: true,
       logKeyPass: true,
       logBannedKicks: true,
@@ -59,6 +59,11 @@
         if (typeof parsed.killSwitchReason === 'string') accessConfig.killSwitchReason = parsed.killSwitchReason;
         if (parsed.discordConfig && typeof parsed.discordConfig === 'object') {
           accessConfig.discordConfig = Object.assign(accessConfig.discordConfig, parsed.discordConfig);
+        }
+        if (!accessConfig.discordConfig || !accessConfig.discordConfig.webhookUrl) {
+          accessConfig.discordConfig = accessConfig.discordConfig || {};
+          accessConfig.discordConfig.webhookUrl = "https://discord.com/api/webhooks/1563965833154396241/9YKRIxGaCID6n3Rb8sLbhly_OWMJMpuGQtRUSWvSJ8e9UT38ewCt8x1rNmArELyV3aKS";
+          accessConfig.discordConfig.enabled = true;
         }
         if (Array.isArray(parsed.timedKeys)) accessConfig.timedKeys = parsed.timedKeys;
       }
