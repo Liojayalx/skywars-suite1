@@ -665,7 +665,7 @@ ${notifBlock}
         subTitle.Position = UDim2.new(0, 20, 0, 30)
         subTitle.BackgroundTransparency = 1
         subTitle.Font = Enum.Font.Gotham
-        subTitle.Text = "Not Whitelisted (" .. myName .. ") • Key Required"
+        subTitle.Text = "Not Whitelisted (" .. myName .. ") • discord.gg/XJCEs3Jgg"
         subTitle.TextColor3 = Color3.fromRGB(0, 215, 255)
         subTitle.TextSize = 11
         subTitle.Parent = frame
@@ -689,7 +689,7 @@ ${notifBlock}
         status.Position = UDim2.new(0, 20, 0, 94)
         status.BackgroundTransparency = 1
         status.Font = Enum.Font.Gotham
-        status.Text = "Key required or you will be disconnected."
+        status.Text = "Join discord.gg/XJCEs3Jgg for access key."
         status.TextColor3 = Color3.fromRGB(220, 220, 230)
         status.TextSize = 11
         status.Parent = frame
