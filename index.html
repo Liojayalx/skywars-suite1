@@ -2,11 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Skywars Suite Studio | Access Control, Whitelist & Luau Obfuscator</title>
   <meta name="description" content="Dedicated Skywars Ultimate Master Suite Studio: configure Roblox username whitelists, blacklists, DALX Key System, and obfuscate directly for Roblox executors.">
+  
+  <!-- Standalone Web App Mode for iOS Safari & Mobile (Hides Safari bottom bar and top address bar on iPhone) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Skywars Suite">
+  <meta name="application-name" content="Skywars Suite">
+  <meta name="theme-color" content="#030712">
+  <meta name="msapplication-TileColor" content="#030712">
+  <meta name="msapplication-navbutton-color" content="#030712">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- Fullscreen Edge-to-Edge Viewport with iPhone Safe Areas -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <!-- Web App Manifest for PWA & Home Screen App Recognition -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Apple Touch Icons for iPhone Home Screen -->
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
+  <link rel="apple-touch-icon-precomposed" href="assets/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
-  <link rel="stylesheet" href="style.css?v=5.0">
+
+  <link rel="stylesheet" href="style.css?v=6.0">
 </head>
 <body>
 
@@ -669,6 +692,23 @@
   </div>
 
   </div> <!-- End #studioAppWrapper -->
+
+  <!-- iOS Safari "Add to Home Screen" Floating Cyberpunk Guide Banner -->
+  <div id="iosInstallBanner" class="ios-install-banner" style="display: none;">
+    <div class="ios-install-icon-wrap">
+      <img src="assets/apple-touch-icon.png" alt="Skywars Suite App Icon">
+    </div>
+    <div class="ios-install-info">
+      <div class="ios-install-title">
+        Install as iPhone App
+        <span class="ios-install-badge">Fullscreen</span>
+      </div>
+      <div class="ios-install-text">
+        Tap <span class="ios-share-inline-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg></span> <strong>Share</strong> ➔ <strong>'Add to Home Screen'</strong> to run full-screen without Safari's bottom bar!
+      </div>
+    </div>
+    <button type="button" class="ios-install-close-btn" id="btnCloseIosBanner" title="Dismiss" aria-label="Dismiss">&times;</button>
+  </div>
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
