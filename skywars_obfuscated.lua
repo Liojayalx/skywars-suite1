@@ -1,4 +1,4 @@
-﻿--[[
+--[[
     +==================================================================+
     |   LUASHIELD MAXIMUM FORTRESS v5.2 - AUTONOMOUS VM ARCHITECTURE   |
     |   Target: Roblox Luau / Universal                                |
