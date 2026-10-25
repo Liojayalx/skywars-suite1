@@ -190,6 +190,7 @@
   const elDiscordTestStatusMsg = document.getElementById('discordTestStatusMsg');
   const elBtnTestDiscordWebhook = document.getElementById('btnTestDiscordWebhook');
   const elBtnSaveDiscordSettings = document.getElementById('btnSaveDiscordSettings');
+  const elBtnPasteDiscordWebhook = document.getElementById('btnPasteDiscordWebhook');
 
   // Timed Keys & HWID Manager Elements
   const elBtnOpenKeyManager = document.getElementById('btnOpenKeyManager');
@@ -1914,6 +1915,27 @@ end
       elModalDiscordConfig.addEventListener('click', (e) => {
         if (e.target === elModalDiscordConfig) {
           closeModal(elModalDiscordConfig);
+        }
+      });
+    }
+
+    if (elBtnPasteDiscordWebhook && elInputDiscordWebhook) {
+      elBtnPasteDiscordWebhook.addEventListener('click', async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (text && text.trim().startsWith('https://')) {
+            elInputDiscordWebhook.value = text.trim();
+            if (elOptDiscordLogging) elOptDiscordLogging.checked = true;
+            showToast('Discord Webhook URL pasted from clipboard!', 'success');
+          } else if (text) {
+            elInputDiscordWebhook.value = text.trim();
+            showToast('Pasted text from clipboard.', 'info');
+          } else {
+            showToast('Clipboard is empty. Copy your webhook URL first!', 'warn');
+          }
+        } catch (e) {
+          elInputDiscordWebhook.focus();
+          showToast('Tap inside the box to paste your URL.', 'info');
         }
       });
     }
