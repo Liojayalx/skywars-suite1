@@ -155,8 +155,14 @@
   const elChkKillSwitchArmed = document.getElementById('chkKillSwitchArmed');
   const elKsModalDesc = document.getElementById('ksModalDesc');
   const elInputKillSwitchReason = document.getElementById('inputKillSwitchReason');
+  const elInputKillSwitchPassword = document.getElementById('inputKillSwitchPassword');
+  const elBtnToggleKsPassVis = document.getElementById('btnToggleKsPassVis');
+  const elKsPassEyeOpen = document.getElementById('ksPassEyeOpen');
+  const elKsPassEyeClosed = document.getElementById('ksPassEyeClosed');
+  const elKsPasswordErrorMsg = document.getElementById('ksPasswordErrorMsg');
   const elBtnCancelKillSwitch = document.getElementById('btnCancelKillSwitch');
   const elBtnSaveKillSwitch = document.getElementById('btnSaveKillSwitch');
+  const KILL_SWITCH_PASSWORD = "Daniel_pro324";
 
   // Multi-Script Slots Elements
   const elSlotPillsList = document.getElementById('slotPillsList');
@@ -1704,6 +1710,17 @@ end
     if (elInputKillSwitchReason) {
       elInputKillSwitchReason.value = accessConfig.killSwitchReason || '';
     }
+    if (elInputKillSwitchPassword) {
+      elInputKillSwitchPassword.value = '';
+      elInputKillSwitchPassword.type = 'password';
+    }
+    if (elKsPasswordErrorMsg) {
+      elKsPasswordErrorMsg.textContent = '';
+    }
+    if (elKsPassEyeOpen && elKsPassEyeClosed) {
+      elKsPassEyeOpen.style.display = 'block';
+      elKsPassEyeClosed.style.display = 'none';
+    }
   }
 
   function initKillSwitchController() {
@@ -1726,8 +1743,29 @@ end
       });
     }
 
+    if (elBtnToggleKsPassVis && elInputKillSwitchPassword) {
+      elBtnToggleKsPassVis.addEventListener('click', () => {
+        const isPass = elInputKillSwitchPassword.type === 'password';
+        elInputKillSwitchPassword.type = isPass ? 'text' : 'password';
+        if (elKsPassEyeOpen) elKsPassEyeOpen.style.display = isPass ? 'none' : 'block';
+        if (elKsPassEyeClosed) elKsPassEyeClosed.style.display = isPass ? 'block' : 'none';
+      });
+    }
+
     if (elBtnSaveKillSwitch) {
       elBtnSaveKillSwitch.addEventListener('click', () => {
+        const enteredPass = (elInputKillSwitchPassword ? elInputKillSwitchPassword.value : '').trim();
+        if (enteredPass !== KILL_SWITCH_PASSWORD) {
+          if (elKsPasswordErrorMsg) {
+            elKsPasswordErrorMsg.textContent = '❌ Access Denied: Incorrect Kill Switch Password!';
+          }
+          if (elInputKillSwitchPassword) {
+            elInputKillSwitchPassword.focus();
+          }
+          showToast('Access Denied: Incorrect Kill Switch Password!', 'error');
+          return;
+        }
+
         const armed = elChkKillSwitchArmed ? elChkKillSwitchArmed.checked : false;
         const reason = elInputKillSwitchReason ? elInputKillSwitchReason.value.trim() : '';
         accessConfig.killSwitchArmed = armed;
@@ -1747,12 +1785,17 @@ end
 
     if (elBtnKsQuickDeactivate) {
       elBtnKsQuickDeactivate.addEventListener('click', () => {
+        const entered = prompt('🔐 Kill Switch Security Check\nEnter the Kill Switch Password to disarm:');
+        if (entered !== KILL_SWITCH_PASSWORD) {
+          showToast('Action Denied: Incorrect Kill Switch Password', 'error');
+          return;
+        }
         accessConfig.killSwitchArmed = false;
         saveAccessConfig();
         syncKillSwitchUI();
         refreshSourceEditor();
         markPendingChanges();
-        showToast('Kill Switch Deactivated. Standard access restored.', 'success');
+        showToast('Kill Switch Deactivated with Password Authorization.', 'success');
       });
     }
 
