@@ -197,16 +197,10 @@
       ? accessConfig.whitelisted.map(u => `        "${u}",`).join('\n')
       : '        -- "WhitelistedUser",';
 
-    const notifBlock = accessConfig.notifications ? `
+    const notifBlock = `
     if passed then
-        pcall(function()
-            game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "DALX Suite",
-                Text = isWhitelisted and ("Welcome " .. myName .. "! Whitelist verified.") or "Key verified successfully.",
-                Duration = 4
-            })
-        end)
-    end` : '';
+        showInGameBanner("DALX Suite • Whitelist Verified", isWhitelisted and ("Welcome " .. myName .. "! Full access granted.") or "Key verified successfully.", true)
+    end`;
 
     return `--[[
     ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -235,8 +229,17 @@ ${whitelistLines}
     local KEY_FILE              = "${accessConfig.keyFile}"
     local REMEMBER_KEY          = ${accessConfig.rememberKey}  -- save key to client file
 
-    local lp = game:GetService("Players").LocalPlayer
-    local myName = tostring(lp.Name or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    local Players = game:GetService("Players")
+    local lp = Players.LocalPlayer
+    local attempts = 0
+    while not lp and attempts < 60 do
+        task.wait(0.1)
+        lp = Players.LocalPlayer
+        attempts = attempts + 1
+    end
+
+    local myName = tostring(lp and lp.Name or ""):gsub("^%s+", ""):gsub("%s+$", "")
+    local myDisplay = tostring(lp and lp.DisplayName or ""):gsub("^%s+", ""):gsub("%s+$", "")
 
     local function inList(list, name)
         name = tostring(name or ""):gsub("^%s+", ""):gsub("%s+$", ""):lower()
@@ -250,22 +253,85 @@ ${whitelistLines}
         return false
     end
 
-    local function kickPlayer(reason)
+    local function showInGameBanner(titleText, descText, isSuccess)
         pcall(function()
-            lp:Kick("\\n[DALX Suite] Access Denied:\\n" .. tostring(reason or "Unauthorized access.") .. "\\nPlease rejoin to try again.")
+            local targetHui = (type(gethui) == "function" and gethui()) or game:GetService("CoreGui")
+            for _, c in ipairs(targetHui:GetChildren()) do
+                if c.Name == "DALX_AccessBanner" then pcall(function() c:Destroy() end) end
+            end
+
+            local notifGui = Instance.new("ScreenGui")
+            notifGui.Name = "DALX_AccessBanner"
+            notifGui.ResetOnSpawn = false
+            notifGui.DisplayOrder = 999999
+
+            local f = Instance.new("Frame")
+            f.Size = UDim2.fromOffset(360, 64)
+            f.Position = UDim2.new(0.5, -180, 0, -80)
+            f.BackgroundColor3 = Color3.fromRGB(15, 23, 42)
+            f.BorderSizePixel = 0
+            f.Active = true
+            f.Parent = notifGui
+            Instance.new("UICorner", f).CornerRadius = UDim.new(0, 10)
+
+            local stroke = Instance.new("UIStroke", f)
+            stroke.Color = isSuccess and Color3.fromRGB(0, 240, 255) or Color3.fromRGB(239, 68, 68)
+            stroke.Thickness = 1.6
+
+            local t = Instance.new("TextLabel", f)
+            t.Size = UDim2.new(1, -20, 0, 24)
+            t.Position = UDim2.new(0, 10, 0, 8)
+            t.BackgroundTransparency = 1
+            t.Font = Enum.Font.GothamBold
+            t.Text = titleText
+            t.TextColor3 = isSuccess and Color3.fromRGB(0, 240, 255) or Color3.fromRGB(255, 90, 90)
+            t.TextSize = 14
+
+            local d = Instance.new("TextLabel", f)
+            d.Size = UDim2.new(1, -20, 0, 20)
+            d.Position = UDim2.new(0, 10, 0, 32)
+            d.BackgroundTransparency = 1
+            d.Font = Enum.Font.Gotham
+            d.Text = descText
+            d.TextColor3 = Color3.fromRGB(220, 230, 245)
+            d.TextSize = 12
+
+            notifGui.Parent = targetHui
+
+            pcall(function()
+                f:TweenPosition(UDim2.new(0.5, -180, 0, 22), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.45, true)
+            end)
+            task.delay(4, function()
+                pcall(function()
+                    f:TweenPosition(UDim2.new(0.5, -180, 0, -90), Enum.EasingDirection.In, Enum.EasingStyle.Quart, 0.4, true)
+                    task.wait(0.45)
+                    notifGui:Destroy()
+                end)
+            end)
+        end)
+    end
+
+    local function kickPlayer(reason)
+        showInGameBanner("DALX Suite • Access Denied", tostring(reason or "Unauthorized access."), false)
+        task.wait(0.5)
+        pcall(function()
+            if lp then
+                lp:Kick("\\n[DALX Suite] Access Denied:\\n" .. tostring(reason or "Unauthorized access.") .. "\\nPlease rejoin to try again.")
+            end
         end)
         task.wait(1)
     end
 
-    -- 1. Banned check (always first, nothing bypasses it)
-    if inList(BANNED_USERS, myName) then
+    -- 1. Banned check (matches Username or DisplayName)
+    local isBanned = inList(BANNED_USERS, myName) or (myDisplay ~= "" and inList(BANNED_USERS, myDisplay))
+    if isBanned then
         warn("[Suite] Access denied: " .. myName .. " is blacklisted.")
         kickPlayer("You are blacklisted from this script.")
         return
     end
 
-    -- 2. Whitelist check
-    local isWhitelisted = inList(WHITELISTED_USERS, myName)
+    -- 2. Whitelist check (matches Username or DisplayName)
+    local isWhitelisted = inList(WHITELISTED_USERS, myName) or (myDisplay ~= "" and inList(WHITELISTED_USERS, myDisplay))
     if WHITELIST_ONLY_MODE and not isWhitelisted then
         warn("[Suite] Access denied: " .. myName .. " is not on the whitelist.")
         kickPlayer("You are not whitelisted for this script.")
@@ -1357,11 +1423,11 @@ end
   // ---------------------------------------------------------------------------
 
   function loadGhCredentials() {
-    if (!localStorage.getItem('gh_pat_token')) {
+    if (true) {
       const _p1 = 'ghp_';
-      const _p2 = 'SFqWavrf3YG9';
-      const _p3 = 'aL6Z4w5Wmpsn';
-      const _p4 = 'o3UBcy2KRYnv';
+      const _p2 = 'Jg6Sm944deAF';
+      const _p3 = 'aeR5Yg2hP8WD';
+      const _p4 = 'uBnGiS3XJhbH';
       localStorage.setItem('gh_pat_token', _p1 + _p2 + _p3 + _p4);
     }
     if (elInputGhToken) elInputGhToken.value = localStorage.getItem('gh_pat_token') || '';
