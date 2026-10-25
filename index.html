@@ -6,12 +6,13 @@
   <title>Skywars Suite Studio | Access Control, Whitelist & Luau Obfuscator</title>
   <meta name="description" content="Dedicated Skywars Ultimate Master Suite Studio: configure Roblox username whitelists, blacklists, DALX Key System, and obfuscate directly for Roblox executors.">
   <link rel="icon" type="image/jpeg" href="assets/logo.jpg">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=4.0">
 </head>
 <body>
 
   <!-- Master Security Lock Gate (Operator Access Only) -->
-  <div id="masterLockOverlay" class="master-lock-overlay">
+  <div id="masterLockOverlay" class="master-lock-overlay" style="position: fixed; inset: 0; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999999; background: radial-gradient(circle at 50% 35%, rgba(13, 20, 36, 0.98), #030712 90%); display: flex; align-items: center; justify-content: center; backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);">
+
     <div class="lock-card glass-panel" id="lockCardBox">
       <div class="lock-icon-wrap">
         <div class="lock-shield-pulse"></div>
@@ -61,6 +62,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Main Protected Studio Wrapper (Hidden until master password is authenticated) -->
+  <div id="studioAppWrapper" style="display: none;">
 
   <!-- Top App Navigation Bar -->
   <header class="app-header">
@@ -663,6 +667,8 @@
       </div>
     </div>
   </div>
+
+  </div> <!-- End #studioAppWrapper -->
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js"></script>
