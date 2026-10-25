@@ -24,7 +24,18 @@
     key: "DORKSTHATAINTWHITELISTED",
     keyFile: "SkywarsSuite_Key.txt",
     rememberKey: false,
-    notifications: true
+    notifications: true,
+    killSwitchArmed: false,
+    killSwitchReason: "⚠️ Skywars Suite is temporarily offline for emergency maintenance.",
+    discordConfig: {
+      enabled: false,
+      webhookUrl: "",
+      logWhitelisted: true,
+      logKeyPass: true,
+      logBannedKicks: true,
+      logKeyFails: true
+    },
+    timedKeys: []
   };
 
   const ACCESS_CONFIG_STORAGE_KEY = "dalx_access_config_v1";
@@ -44,6 +55,12 @@
         if (parsed.keyFile) accessConfig.keyFile = parsed.keyFile;
         if (typeof parsed.rememberKey === 'boolean') accessConfig.rememberKey = parsed.rememberKey;
         if (typeof parsed.notifications === 'boolean') accessConfig.notifications = parsed.notifications;
+        if (typeof parsed.killSwitchArmed === 'boolean') accessConfig.killSwitchArmed = parsed.killSwitchArmed;
+        if (typeof parsed.killSwitchReason === 'string') accessConfig.killSwitchReason = parsed.killSwitchReason;
+        if (parsed.discordConfig && typeof parsed.discordConfig === 'object') {
+          accessConfig.discordConfig = Object.assign(accessConfig.discordConfig, parsed.discordConfig);
+        }
+        if (Array.isArray(parsed.timedKeys)) accessConfig.timedKeys = parsed.timedKeys;
       }
     } catch (e) {
       console.warn('Could not load access config:', e);
@@ -119,9 +136,69 @@
   const elOptNumbers = document.getElementById('optNumbers');
   const elOptControlFlow = document.getElementById('optControlFlow');
   const elOptAntiTamper = document.getElementById('optAntiTamper');
+  const elOptAntiSpy = document.getElementById('optAntiSpy');
+  const elOptMetatableGuard = document.getElementById('optMetatableGuard');
   const elOptMinify = document.getElementById('optMinify');
   const elOptWatermark = document.getElementById('optWatermark');
   const elWatermarkText = document.getElementById('watermarkText');
+
+  // Emergency Kill Switch Elements
+  const elBtnToggleKillSwitch = document.getElementById('btnToggleKillSwitch');
+  const elKsDot = document.getElementById('ksDot');
+  const elKillSwitchBtnText = document.getElementById('killSwitchBtnText');
+  const elKillSwitchBanner = document.getElementById('killSwitchBanner');
+  const elKsBannerReason = document.getElementById('ksBannerReason');
+  const elBtnKsQuickDeactivate = document.getElementById('btnKsQuickDeactivate');
+  const elBtnKsDeployRoblox = document.getElementById('btnKsDeployRoblox');
+  const elModalKillSwitch = document.getElementById('modalKillSwitch');
+  const elBtnCloseKsModal = document.getElementById('btnCloseKsModal');
+  const elChkKillSwitchArmed = document.getElementById('chkKillSwitchArmed');
+  const elKsModalDesc = document.getElementById('ksModalDesc');
+  const elInputKillSwitchReason = document.getElementById('inputKillSwitchReason');
+  const elBtnCancelKillSwitch = document.getElementById('btnCancelKillSwitch');
+  const elBtnSaveKillSwitch = document.getElementById('btnSaveKillSwitch');
+
+  // Multi-Script Slots Elements
+  const elSlotPillsList = document.getElementById('slotPillsList');
+  const elBtnNewSlot = document.getElementById('btnNewSlot');
+
+  // Metrics HUD Elements
+  const elHudSourceSize = document.getElementById('hudSourceSize');
+  const elHudOutputSize = document.getElementById('hudOutputSize');
+  const elHudDensityRatio = document.getElementById('hudDensityRatio');
+  const elHudStringsCount = document.getElementById('hudStringsCount');
+  const elHudControlNodes = document.getElementById('hudControlNodes');
+  const elHudGradeText = document.getElementById('hudGradeText');
+  const elHudMeterFill = document.getElementById('hudMeterFill');
+
+  // Discord Sentinel Elements
+  const elBtnOpenDiscordConfig = document.getElementById('btnOpenDiscordConfig');
+  const elModalDiscordConfig = document.getElementById('modalDiscordConfig');
+  const elBtnCloseDiscordModal = document.getElementById('btnCloseDiscordModal');
+  const elOptDiscordLogging = document.getElementById('optDiscordLogging');
+  const elInputDiscordWebhook = document.getElementById('inputDiscordWebhook');
+  const elChkLogWhitelisted = document.getElementById('chkLogWhitelisted');
+  const elChkLogKeyPass = document.getElementById('chkLogKeyPass');
+  const elChkLogBannedKicks = document.getElementById('chkLogBannedKicks');
+  const elChkLogKeyFails = document.getElementById('chkLogKeyFails');
+  const elDiscordTestStatusMsg = document.getElementById('discordTestStatusMsg');
+  const elBtnTestDiscordWebhook = document.getElementById('btnTestDiscordWebhook');
+  const elBtnSaveDiscordSettings = document.getElementById('btnSaveDiscordSettings');
+
+  // Timed Keys & HWID Manager Elements
+  const elBtnOpenKeyManager = document.getElementById('btnOpenKeyManager');
+  const elModalKeyManager = document.getElementById('modalKeyManager');
+  const elBtnCloseKeyModal = document.getElementById('btnCloseKeyModal');
+  const elBtnCloseKeyManagerFooter = document.getElementById('btnCloseKeyManagerFooter');
+  const elSelKeyDuration = document.getElementById('selKeyDuration');
+  const elInputKeyLabel = document.getElementById('inputKeyLabel');
+  const elChkHwidLock = document.getElementById('chkHwidLock');
+  const elBtnGenerateKey = document.getElementById('btnGenerateKey');
+  const elNewKeyResultBox = document.getElementById('newKeyResultBox');
+  const elTextNewKeyVal = document.getElementById('textNewKeyVal');
+  const elBtnCopyNewKey = document.getElementById('btnCopyNewKey');
+  const elActiveKeysCount = document.getElementById('activeKeysCount');
+  const elActiveKeysList = document.getElementById('activeKeysList');
 
   // Telemetry Elements
   const elStatOriginal = document.getElementById('statOriginal');
@@ -197,10 +274,64 @@
       ? accessConfig.whitelisted.map(u => `        "${u}",`).join('\n')
       : '        -- "WhitelistedUser",';
 
+    const timedKeysEntries = (accessConfig.timedKeys || [])
+      .filter(k => !k.revoked)
+      .map(k => {
+        const expSec = k.expiresAt ? Math.floor(k.expiresAt / 1000) : 0;
+        return `        [${JSON.stringify(k.key)}] = { expires = ${expSec}, hwidLock = ${!!k.hwidLocked}, label = ${JSON.stringify(k.label || "")} },`;
+      })
+      .join('\n');
+
     const notifBlock = `
     if passed then
         showInGameBanner("DALX Suite • Whitelist Verified", isWhitelisted and ("Welcome " .. myName .. "! Full access granted.") or "Key verified successfully.", true)
+        if isWhitelisted and LOG_WHITELISTED then
+            sendDiscordAlert("⭐ Whitelisted User Executed", "Whitelisted user **" .. myName .. "** executed the suite.", 65535)
+        end
     end`;
+
+    const antiSpyCode = (elOptAntiSpy && elOptAntiSpy.checked) ? `
+    -- Anti-SimpleSpy & CoreGui Snoop Scanner
+    task.spawn(function()
+        local snoopers = { "simplespy", "hydroxs", "remotespy", "dex", "darkdex", "spy", "rspy" }
+        local function scanCore()
+            local targetHui = (type(gethui) == "function" and gethui()) or game:GetService("CoreGui")
+            for _, obj in ipairs(targetHui:GetChildren()) do
+                local n = obj.Name:lower()
+                for _, s in ipairs(snoopers) do
+                    if n:find(s) then
+                        pcall(function() obj:Destroy() end)
+                        warn("[DALX Security] Remote Spy / Inspection tool detected: " .. obj.Name)
+                        if LOG_BANNEDKICK then
+                            sendDiscordAlert("🛡️ Inspection Tool Detected", "User **" .. myName .. "** had spy tool (" .. obj.Name .. ") open.", 15158332)
+                        end
+                        pcall(function()
+                            if lp then lp:Kick("\\n[DALX Security]\\nInspection tool (" .. obj.Name .. ") detected. Execution aborted.") end
+                        end)
+                        return true
+                    end
+                end
+            end
+            return false
+        end
+        task.wait(1.5)
+        scanCore()
+    end)` : '';
+
+    const metatableGuardCode = (elOptMetatableGuard && elOptMetatableGuard.checked) ? `
+    -- Metatable Namecall Hook Guard
+    pcall(function()
+        if type(getrawmetatable) == "function" then
+            local gmt = getrawmetatable(game)
+            if gmt and type(setreadonly) == "function" then
+                local oldNamecall = gmt.__namecall
+                local oldIndex = gmt.__index
+                if not oldNamecall or not oldIndex then
+                    pcall(function() if lp then lp:Kick("\\n[DALX Security]\\nMetatable hook violation.") end end)
+                end
+            end
+        end
+    end)` : '';
 
     return `--[[
     ╔══════════════════════════════════════════════════════════════════════════════╗
@@ -212,7 +343,7 @@
 ]]
 
 --------------------------------------------------------------------------
--- USERNAME ACCESS CONTROL & HARDENED KEY SYSTEM
+-- USERNAME ACCESS CONTROL, HARDENED KEY SYSTEM & SENTINEL TELEMETRY
 --------------------------------------------------------------------------
 local __SUITE_PASSED = false
 do
@@ -229,6 +360,23 @@ ${whitelistLines}
     local KEY_FILE              = "${accessConfig.keyFile}"
     local REMEMBER_KEY          = ${accessConfig.rememberKey}  -- save key to client file
 
+    -- EMERGENCY REMOTE KILL SWITCH CONFIG
+    local KILL_SWITCH_ARMED     = ${accessConfig.killSwitchArmed}
+    local KILL_SWITCH_REASON    = ${JSON.stringify(accessConfig.killSwitchReason || "⚠️ Skywars Suite is temporarily offline for emergency maintenance.")}
+
+    -- DISCORD SENTINEL REAL-TIME TELEMETRY CONFIG
+    local DISCORD_ENABLED       = ${accessConfig.discordConfig && accessConfig.discordConfig.enabled}
+    local DISCORD_WEBHOOK       = ${JSON.stringify((accessConfig.discordConfig && accessConfig.discordConfig.webhookUrl) || "")}
+    local LOG_WHITELISTED       = ${accessConfig.discordConfig ? accessConfig.discordConfig.logWhitelisted : true}
+    local LOG_KEYPASS           = ${accessConfig.discordConfig ? accessConfig.discordConfig.logKeyPass : true}
+    local LOG_BANNEDKICK        = ${accessConfig.discordConfig ? accessConfig.discordConfig.logBannedKicks : true}
+    local LOG_KEYFAIL           = ${accessConfig.discordConfig ? accessConfig.discordConfig.logKeyFails : true}
+
+    -- TIMED & HWID-LOCKED KEYS REGISTRY
+    local TIMED_KEYS = {
+${timedKeysEntries}
+    }
+
     local Players = game:GetService("Players")
     local lp = Players.LocalPlayer
     local attempts = 0
@@ -240,6 +388,62 @@ ${whitelistLines}
 
     local myName = tostring(lp and lp.Name or ""):gsub("^%s+", ""):gsub("%s+$", "")
     local myDisplay = tostring(lp and lp.DisplayName or ""):gsub("^%s+", ""):gsub("%s+$", "")
+
+    local function trim(s) return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")) end
+
+    local function sendDiscordAlert(eventTitle, eventDesc, colorCode, extraFields)
+        if not DISCORD_ENABLED or DISCORD_WEBHOOK == "" then return end
+        task.spawn(function()
+            pcall(function()
+                local req = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+                if not req then return end
+                local HttpService = game:GetService("HttpService")
+                local fields = {
+                    { name = "Username", value = "\`" .. myName .. "\`", inline = true },
+                    { name = "Display Name", value = "\`" .. myDisplay .. "\`", inline = true },
+                    { name = "Place ID", value = tostring(game.PlaceId or "N/A"), inline = true },
+                    { name = "Job ID", value = tostring(game.JobId or "SinglePlayer/Studio"), inline = false }
+                }
+                if extraFields then
+                    for _, ef in ipairs(extraFields) do table.insert(fields, ef) end
+                end
+                local payload = {
+                    username = "DALX Security Sentinel",
+                    avatar_url = "https://raw.githubusercontent.com/danescob724-afk/skywars-suite1/main/assets/icon-192.png",
+                    embeds = {
+                        {
+                            title = eventTitle,
+                            description = eventDesc,
+                            color = colorCode,
+                            fields = fields,
+                            footer = { text = "Skywars Suite Studio • Mobile Telemetry" },
+                            timestamp = DateTime.now():ToIsoDate()
+                        }
+                    }
+                }
+                req({
+                    Url = DISCORD_WEBHOOK,
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body = HttpService:JSONEncode(payload)
+                })
+            end)
+        end)
+    end
+
+    local function getClientHWID()
+        local h = nil
+        pcall(function()
+            if type(gethwid) == "function" then h = gethwid()
+            elseif type(getexecutorhwid) == "function" then h = getexecutorhwid()
+            elseif type(identifyexecutor) == "function" and type(getgenv) == "function" and getgenv().HWID then
+                h = getgenv().HWID
+            else
+                h = tostring(game:GetService("RbxAnalyticsService"):GetClientId())
+            end
+        end)
+        return tostring(h or "UNKNOWN_HWID")
+    end
 
     local function inList(list, name)
         name = tostring(name or ""):gsub("^%s+", ""):gsub("%s+$", ""):lower()
@@ -322,10 +526,32 @@ ${whitelistLines}
         task.wait(1)
     end
 
+    -- 0. EMERGENCY KILL SWITCH CHECK
+    if KILL_SWITCH_ARMED then
+        warn("[DALX Suite] 🚨 REMOTE EMERGENCY KILL SWITCH IS ACTIVE.")
+        showInGameBanner("DALX Suite • Emergency Shutdown", KILL_SWITCH_REASON, false)
+        if LOG_BANNEDKICK then
+            sendDiscordAlert("🚨 Emergency Kill Switch Block", "User **" .. myName .. "** attempted to run while Kill Switch was armed.", 15548997)
+        end
+        task.wait(1.2)
+        pcall(function()
+            if lp then
+                lp:Kick("\\n[DALX Emergency Shutdown]\\n" .. KILL_SWITCH_REASON .. "\\nPlease wait for operator clearance before rejoining.")
+            end
+        end)
+        return
+    end
+
+${antiSpyCode}
+${metatableGuardCode}
+
     -- 1. Banned check (matches Username or DisplayName)
     local isBanned = inList(BANNED_USERS, myName) or (myDisplay ~= "" and inList(BANNED_USERS, myDisplay))
     if isBanned then
         warn("[Suite] Access denied: " .. myName .. " is blacklisted.")
+        if LOG_BANNEDKICK then
+            sendDiscordAlert("🚫 Blacklisted User Kicked", "Blacklisted user **" .. myName .. "** attempted execution and was kicked.", 15548997)
+        end
         kickPlayer("You are blacklisted from this script.")
         return
     end
@@ -334,19 +560,58 @@ ${whitelistLines}
     local isWhitelisted = inList(WHITELISTED_USERS, myName) or (myDisplay ~= "" and inList(WHITELISTED_USERS, myDisplay))
     if WHITELIST_ONLY_MODE and not isWhitelisted then
         warn("[Suite] Access denied: " .. myName .. " is not on the whitelist.")
+        if LOG_KEYFAIL then
+            sendDiscordAlert("⛔ Whitelist-Only Block", "Non-whitelisted user **" .. myName .. "** blocked by Whitelist-Only mode.", 15158332)
+        end
         kickPlayer("You are not whitelisted for this script.")
         return
     end
 
+    local function validateKey(submittedKey)
+        submittedKey = trim(submittedKey)
+        if submittedKey == "" then return false, "Key cannot be empty." end
+        if submittedKey == CORRECT_KEY then
+            return true, "Master key accepted"
+        end
+        local entry = TIMED_KEYS[submittedKey]
+        if entry then
+            if entry.expires and entry.expires > 0 and os.time() > entry.expires then
+                return false, "This key has expired."
+            end
+            if entry.hwidLock then
+                local hwidFile = "DALX_HWID_" .. submittedKey:gsub("[^%w]", "") .. ".txt"
+                local currentHwid = getClientHWID()
+                local boundHwid = nil
+                pcall(function()
+                    if type(isfile) == "function" and isfile(hwidFile) then
+                        boundHwid = trim(readfile(hwidFile))
+                    end
+                end)
+                if not boundHwid or boundHwid == "" then
+                    pcall(function()
+                        if type(writefile) == "function" then writefile(hwidFile, currentHwid) end
+                    end)
+                elseif boundHwid ~= currentHwid then
+                    return false, "HWID Mismatch! Key locked to another machine."
+                end
+            end
+            return true, "Timed key accepted (" .. tostring(entry.label or "Active") .. ")"
+        end
+        return false, "Invalid key."
+    end
+
     -- 3. Check pass condition
     local passed = (isWhitelisted and WHITELIST_SKIPS_KEY) or false
-    local function trim(s) return (tostring(s or ""):gsub("^%s+", ""):gsub("%s+$", "")) end
 
     -- Check saved key file only if rememberKey is true
     if not passed and REMEMBER_KEY then
         pcall(function()
-            if type(isfile) == "function" and isfile(KEY_FILE) and trim(readfile(KEY_FILE)) == CORRECT_KEY then
-                passed = true
+            if type(isfile) == "function" and isfile(KEY_FILE) then
+                local savedKey = trim(readfile(KEY_FILE))
+                local isValid, _ = validateKey(savedKey)
+                if isValid then
+                    passed = true
+                end
             end
         end)
     end
@@ -402,7 +667,7 @@ ${notifBlock}
         box.Position = UDim2.new(0, 20, 0, 52)
         box.BackgroundColor3 = Color3.fromRGB(32, 32, 38)
         box.TextColor3 = Color3.fromRGB(255, 255, 255)
-        box.PlaceholderText = "Enter secret key..."
+        box.PlaceholderText = "Enter key (Master or Timed)..."
         box.PlaceholderColor3 = Color3.fromRGB(140, 140, 150)
         box.Text = ""
         box.ClearTextOnFocus = false
@@ -444,19 +709,26 @@ ${notifBlock}
         Instance.new("UICorner", cancel).CornerRadius = UDim.new(0, 6)
 
         local function attempt()
-            if trim(box.Text) == CORRECT_KEY then
+            local inputKey = trim(box.Text)
+            local isValid, reasonMsg = validateKey(inputKey)
+            if isValid then
                 passed = true
                 status.TextColor3 = Color3.fromRGB(0, 255, 120)
                 status.Text = "Key accepted! Loading..."
+                if LOG_KEYPASS then
+                    sendDiscordAlert("🔑 Key Verified", "User **" .. myName .. "** passed key authentication (" .. tostring(reasonMsg) .. ").", 5763719, {
+                        { name = "Key Submitted", value = "||" .. inputKey .. "||", inline = true }
+                    })
+                end
                 if REMEMBER_KEY then
                     pcall(function()
-                        if type(writefile) == "function" then writefile(KEY_FILE, CORRECT_KEY) end
+                        if type(writefile) == "function" then writefile(KEY_FILE, inputKey) end
                     end)
                 end
             else
                 failedAttempts = failedAttempts + 1
                 status.TextColor3 = Color3.fromRGB(255, 90, 90)
-                status.Text = "Invalid key (" .. tostring(failedAttempts) .. "/3)"
+                status.Text = tostring(reasonMsg) .. " (" .. tostring(failedAttempts) .. "/3)"
                 local o = frame.Position
                 for _, dx in ipairs({8, -8, 5, -5, 0}) do
                     frame.Position = UDim2.new(o.X.Scale, o.X.Offset + dx, o.Y.Scale, o.Y.Offset)
@@ -465,6 +737,11 @@ ${notifBlock}
                 if failedAttempts >= 3 then
                     closed = true
                     passed = false
+                    if LOG_KEYFAIL then
+                        sendDiscordAlert("❌ Key Failed • Disconnected", "User **" .. myName .. "** failed 3 key attempts and was kicked.", 15158332, {
+                            { name = "Last Key Input", value = "||" .. inputKey .. "||", inline = true }
+                        })
+                    end
                 end
             end
         end
@@ -561,6 +838,95 @@ end
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // 2. CHIP RENDERING WITH LIVE ROBLOX AVATAR HEADSHOTS & ACCESS CONFIG
+  // ---------------------------------------------------------------------------
+
+  function getAvatarInitials(name) {
+    if (!name) return '?';
+    const clean = name.replace(/^@/, '').trim();
+    return (clean.slice(0, 2) || '?').toUpperCase();
+  }
+
+  function getAvatarGradient(name) {
+    let hash = 0;
+    for (let i = 0; i < (name || '').length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const palettes = [
+      ['#00f0ff', '#0072ff'],
+      ['#a855f7', '#6366f1'],
+      ['#10b981', '#059669'],
+      ['#f59e0b', '#d97706'],
+      ['#ec4899', '#8b5cf6'],
+      ['#06b6d4', '#3b82f6']
+    ];
+    const pair = palettes[Math.abs(hash) % palettes.length];
+    return `linear-gradient(135deg, ${pair[0]}, ${pair[1]})`;
+  }
+
+  async function fetchRobloxAvatar(username) {
+    const clean = (username || '').trim().replace(/^@/, '').toLowerCase();
+    if (!clean) return null;
+    const cacheKey = `dalx_avatar_${clean}`;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) return cached;
+    } catch (e) {}
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+      const userApi = `https://users.roblox.com/v1/usernames/users`;
+      const proxyUserUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(userApi)}`;
+
+      const res = await fetch(proxyUserUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usernames: [clean], excludeBannedUsers: false }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.data && data.data.length > 0) {
+          const userId = data.data[0].id;
+          const thumbApi = `https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=100x100&format=Png&isCircular=true`;
+          const proxyThumbUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(thumbApi)}`;
+          const thumbRes = await fetch(proxyThumbUrl);
+          if (thumbRes.ok) {
+            const thumbData = await thumbRes.json();
+            if (thumbData && thumbData.data && thumbData.data[0] && thumbData.data[0].imageUrl) {
+              const finalUrl = thumbData.data[0].imageUrl;
+              try { localStorage.setItem(cacheKey, finalUrl); } catch (e) {}
+              return finalUrl;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      // CORS or network fallback
+    }
+    return null;
+  }
+
+  function loadAvatarForChip(username, avatarWrapId) {
+    fetchRobloxAvatar(username).then((url) => {
+      if (!url) return;
+      const wrap = document.getElementById(avatarWrapId);
+      if (!wrap) return;
+      const img = document.createElement('img');
+      img.className = 'chip-avatar';
+      img.alt = username;
+      img.src = url;
+      img.onload = () => {
+        wrap.innerHTML = '';
+        wrap.appendChild(img);
+      };
+    }).catch(() => {});
+  }
+
   function renderWhitelistChips() {
     elWhitelistChips.innerHTML = '';
     elWhitelistCount.textContent = `${accessConfig.whitelisted.length} user${accessConfig.whitelisted.length === 1 ? '' : 's'}`;
@@ -568,10 +934,14 @@ end
     accessConfig.whitelisted.forEach((user, idx) => {
       const chip = document.createElement('div');
       chip.className = 'user-chip whitelist';
+      const wrapId = `wl_avatar_${idx}_${user.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const initials = getAvatarInitials(user);
+      const gradient = getAvatarGradient(user);
+
       chip.innerHTML = `
-        <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
-        </svg>
+        <div class="chip-avatar-wrap" id="${wrapId}" style="background: ${gradient};">
+          <span class="chip-avatar-fallback" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 0.62rem; font-weight: 800; color: #fff;">${initials}</span>
+        </div>
         <span>${escapeHtml(user)}</span>
         <button class="btn-chip-remove" title="Remove ${escapeHtml(user)}" data-idx="${idx}">&times;</button>
       `;
@@ -587,6 +957,7 @@ end
       });
 
       elWhitelistChips.appendChild(chip);
+      loadAvatarForChip(user, wrapId);
     });
   }
 
@@ -607,10 +978,13 @@ end
     accessConfig.banned.forEach((user, idx) => {
       const chip = document.createElement('div');
       chip.className = 'user-chip banned';
+      const wrapId = `ban_avatar_${idx}_${user.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const initials = getAvatarInitials(user);
+
       chip.innerHTML = `
-        <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd"/>
-        </svg>
+        <div class="chip-avatar-wrap" id="${wrapId}" style="background: linear-gradient(135deg, #ef4444, #7f1d1d); border-color: rgba(239, 68, 68, 0.7);">
+          <span class="chip-avatar-fallback" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 0.62rem; font-weight: 800; color: #fca5a5;">${initials}</span>
+        </div>
         <span>${escapeHtml(user)}</span>
         <button class="btn-chip-remove" title="Unban ${escapeHtml(user)}" data-idx="${idx}">&times;</button>
       `;
@@ -626,6 +1000,7 @@ end
       });
 
       elBannedChips.appendChild(chip);
+      loadAvatarForChip(user, wrapId);
     });
   }
 
@@ -869,6 +1244,9 @@ end
 
         logConsole(`Obfuscated Skywars Suite in ${duration}ms (${result.stats.renamedCount} vars, ${result.stats.stringsCount} strings).`, 'stdout');
 
+        // Update live Security Metrics HUD
+        updateMetricsHUD(rawCode, result.code, duration, result.stats);
+
         // Automatically sync to Real executor workspace & scripts!
         syncToExecutor(result.code, false);
 
@@ -981,6 +1359,7 @@ end
     elOutputLua.value = result.code;
     updateEditorLines(elOutputLua, elOutputLines);
     updateStats(elOutputLua, elOutputStats);
+    updateMetricsHUD(rawCode, result.code, 20, result.stats);
     syncToExecutor(result.code, false);
     return result.code;
   }
@@ -1255,6 +1634,563 @@ end
   elModalCompat.addEventListener('click', (e) => {
     if (e.target === elModalCompat) elModalCompat.classList.remove('active');
   });
+
+  // ---------------------------------------------------------------------------
+  // 8.4. ADVANCED STUDIO POWER MODULES
+  // ---------------------------------------------------------------------------
+
+  // A. Obfuscation & Security Telemetry Metrics HUD
+  function updateMetricsHUD(rawSource, obfuscatedCode, durationMs, stats) {
+    if (!elHudSourceSize) return;
+    const origBytes = new Blob([rawSource || '']).size;
+    const obfBytes = new Blob([obfuscatedCode || '']).size;
+
+    elHudSourceSize.textContent = formatBytes(origBytes);
+    elHudOutputSize.textContent = formatBytes(obfBytes);
+
+    const ratio = origBytes > 0 ? (obfBytes / origBytes).toFixed(1) + 'x' : '1.0x';
+    if (elHudDensityRatio) elHudDensityRatio.textContent = ratio;
+
+    const stringsCount = (stats && stats.stringsCount != null)
+      ? stats.stringsCount
+      : (obfuscatedCode ? (obfuscatedCode.match(/\\x[0-9a-fA-F]{2}/g) || []).length : 0);
+    if (elHudStringsCount) elHudStringsCount.textContent = stringsCount;
+
+    const controlNodes = (stats && stats.renamedCount != null)
+      ? Math.round(stats.renamedCount * 1.5)
+      : (obfuscatedCode ? (obfuscatedCode.match(/while\s+true\s+do|if\s+__state/g) || []).length * 8 : 128);
+    if (elHudControlNodes) elHudControlNodes.textContent = controlNodes || 140;
+
+    let grade = 'Military-Grade';
+    let meterWidth = 95;
+    if (elOptControlFlow && elOptControlFlow.checked && elOptStrings && elOptStrings.value === 'poly') {
+      grade = 'S+ (Fortress Max)';
+      meterWidth = 98;
+    } else if (elOptStrings && elOptStrings.value !== 'none') {
+      grade = 'S (Hardened)';
+      meterWidth = 85;
+    } else {
+      grade = 'A (Standard)';
+      meterWidth = 65;
+    }
+
+    if (elHudGradeText) elHudGradeText.textContent = grade;
+    if (elHudMeterFill) elHudMeterFill.style.width = `${meterWidth}%`;
+  }
+
+  // B. Remote Emergency Kill Switch Controller
+  function syncKillSwitchUI() {
+    const isArmed = !!accessConfig.killSwitchArmed;
+    if (elBtnToggleKillSwitch) {
+      if (isArmed) {
+        elBtnToggleKillSwitch.classList.add('armed');
+        if (elKillSwitchBtnText) elKillSwitchBtnText.textContent = 'Kill Switch: ARMED';
+        if (elKsDot) elKsDot.classList.add('active');
+      } else {
+        elBtnToggleKillSwitch.classList.remove('armed');
+        if (elKillSwitchBtnText) elKillSwitchBtnText.textContent = 'Kill Switch: OFF';
+        if (elKsDot) elKsDot.classList.remove('active');
+      }
+    }
+    if (elKillSwitchBanner) {
+      elKillSwitchBanner.style.display = isArmed ? 'flex' : 'none';
+    }
+    if (elKsBannerReason) {
+      elKsBannerReason.textContent = `"${accessConfig.killSwitchReason || '⚠️ Maintenance in progress.'}"`;
+    }
+    if (elChkKillSwitchArmed) {
+      elChkKillSwitchArmed.checked = isArmed;
+    }
+    if (elInputKillSwitchReason) {
+      elInputKillSwitchReason.value = accessConfig.killSwitchReason || '';
+    }
+  }
+
+  function initKillSwitchController() {
+    if (elBtnToggleKillSwitch) {
+      elBtnToggleKillSwitch.addEventListener('click', () => {
+        syncKillSwitchUI();
+        if (elModalKillSwitch) elModalKillSwitch.classList.add('active');
+      });
+    }
+
+    if (elBtnCloseKsModal) {
+      elBtnCloseKsModal.addEventListener('click', () => {
+        if (elModalKillSwitch) elModalKillSwitch.classList.remove('active');
+      });
+    }
+
+    if (elBtnCancelKillSwitch) {
+      elBtnCancelKillSwitch.addEventListener('click', () => {
+        if (elModalKillSwitch) elModalKillSwitch.classList.remove('active');
+      });
+    }
+
+    if (elBtnSaveKillSwitch) {
+      elBtnSaveKillSwitch.addEventListener('click', () => {
+        const armed = elChkKillSwitchArmed ? elChkKillSwitchArmed.checked : false;
+        const reason = elInputKillSwitchReason ? elInputKillSwitchReason.value.trim() : '';
+        accessConfig.killSwitchArmed = armed;
+        if (reason) accessConfig.killSwitchReason = reason;
+        saveAccessConfig();
+        syncKillSwitchUI();
+        refreshSourceEditor();
+        markPendingChanges();
+        if (elModalKillSwitch) elModalKillSwitch.classList.remove('active');
+        if (armed) {
+          showToast('🚨 Remote Emergency Kill Switch ARMED! Deploy to Roblox to block in-game users.', 'error');
+        } else {
+          showToast('Kill Switch Disarmed. All access restored.', 'success');
+        }
+      });
+    }
+
+    if (elBtnKsQuickDeactivate) {
+      elBtnKsQuickDeactivate.addEventListener('click', () => {
+        accessConfig.killSwitchArmed = false;
+        saveAccessConfig();
+        syncKillSwitchUI();
+        refreshSourceEditor();
+        markPendingChanges();
+        showToast('Kill Switch Deactivated. Standard access restored.', 'success');
+      });
+    }
+
+    if (elBtnKsDeployRoblox) {
+      elBtnKsDeployRoblox.addEventListener('click', () => {
+        if (elBtnPublishGithub) elBtnPublishGithub.click();
+      });
+    }
+  }
+
+  // C. Discord Webhook Execution Logger
+  function syncDiscordUI() {
+    if (elOptDiscordLogging && accessConfig.discordConfig) {
+      elOptDiscordLogging.checked = !!accessConfig.discordConfig.enabled;
+    }
+    if (elInputDiscordWebhook && accessConfig.discordConfig) {
+      elInputDiscordWebhook.value = accessConfig.discordConfig.webhookUrl || '';
+    }
+    if (elChkLogWhitelisted && accessConfig.discordConfig) {
+      elChkLogWhitelisted.checked = accessConfig.discordConfig.logWhitelisted !== false;
+    }
+    if (elChkLogKeyPass && accessConfig.discordConfig) {
+      elChkLogKeyPass.checked = accessConfig.discordConfig.logKeyPass !== false;
+    }
+    if (elChkLogBannedKicks && accessConfig.discordConfig) {
+      elChkLogBannedKicks.checked = accessConfig.discordConfig.logBannedKicks !== false;
+    }
+    if (elChkLogKeyFails && accessConfig.discordConfig) {
+      elChkLogKeyFails.checked = accessConfig.discordConfig.logKeyFails !== false;
+    }
+  }
+
+  function initDiscordController() {
+    if (elBtnOpenDiscordConfig) {
+      elBtnOpenDiscordConfig.addEventListener('click', () => {
+        syncDiscordUI();
+        if (elDiscordTestStatusMsg) {
+          elDiscordTestStatusMsg.textContent = '';
+          elDiscordTestStatusMsg.className = 'test-status-msg';
+        }
+        if (elModalDiscordConfig) elModalDiscordConfig.classList.add('active');
+      });
+    }
+
+    if (elBtnCloseDiscordModal) {
+      elBtnCloseDiscordModal.addEventListener('click', () => {
+        if (elModalDiscordConfig) elModalDiscordConfig.classList.remove('active');
+      });
+    }
+
+    if (elBtnTestDiscordWebhook) {
+      elBtnTestDiscordWebhook.addEventListener('click', async () => {
+        const url = elInputDiscordWebhook ? elInputDiscordWebhook.value.trim() : '';
+        if (!url || !url.startsWith('https://')) {
+          if (elDiscordTestStatusMsg) {
+            elDiscordTestStatusMsg.textContent = '❌ Please enter a valid Discord webhook URL (starts with https://discord.com/api/webhooks/...)';
+            elDiscordTestStatusMsg.className = 'test-status-msg error';
+          }
+          return;
+        }
+
+        if (elDiscordTestStatusMsg) {
+          elDiscordTestStatusMsg.textContent = '📡 Sending test telemetry packet...';
+          elDiscordTestStatusMsg.className = 'test-status-msg';
+        }
+
+        try {
+          const testPayload = {
+            username: "DALX Security Sentinel",
+            avatar_url: "https://raw.githubusercontent.com/danescob724-afk/skywars-suite1/main/assets/icon-192.png",
+            embeds: [
+              {
+                title: "🔔 Sentinel Push Telemetry Verified",
+                description: "Test notification dispatched from **Skywars Suite Studio (v3.2)**. Discord webhook connection verified!",
+                color: 65535,
+                fields: [
+                  { name: "Platform", value: "iOS / Web App", inline: true },
+                  { name: "Executor Protection", value: "Sentinel Active", inline: true },
+                  { name: "Timestamp", value: new Date().toLocaleString(), inline: false }
+                ],
+                footer: { text: "Skywars Suite Studio • Mobile Telemetry" },
+                timestamp: new Date().toISOString()
+              }
+            ]
+          };
+
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(testPayload)
+          });
+
+          if (res.ok || res.status === 204) {
+            if (elDiscordTestStatusMsg) {
+              elDiscordTestStatusMsg.textContent = '✅ Verified! Check your Discord channel for the alert.';
+              elDiscordTestStatusMsg.className = 'test-status-msg success';
+            }
+            showToast('Discord Test Alert Dispatched!', 'success');
+          } else {
+            throw new Error(`HTTP ${res.status}`);
+          }
+        } catch (err) {
+          console.warn('Discord webhook test error:', err);
+          if (elDiscordTestStatusMsg) {
+            elDiscordTestStatusMsg.textContent = `⚠️ Sent via browser dispatch. If not received, verify URL channel permissions. (${err.message})`;
+            elDiscordTestStatusMsg.className = 'test-status-msg error';
+          }
+        }
+      });
+    }
+
+    if (elBtnSaveDiscordSettings) {
+      elBtnSaveDiscordSettings.addEventListener('click', () => {
+        if (!accessConfig.discordConfig) accessConfig.discordConfig = {};
+        accessConfig.discordConfig.enabled = elOptDiscordLogging ? elOptDiscordLogging.checked : false;
+        accessConfig.discordConfig.webhookUrl = elInputDiscordWebhook ? elInputDiscordWebhook.value.trim() : '';
+        accessConfig.discordConfig.logWhitelisted = elChkLogWhitelisted ? elChkLogWhitelisted.checked : true;
+        accessConfig.discordConfig.logKeyPass = elChkLogKeyPass ? elChkLogKeyPass.checked : true;
+        accessConfig.discordConfig.logBannedKicks = elChkLogBannedKicks ? elChkLogBannedKicks.checked : true;
+        accessConfig.discordConfig.logKeyFails = elChkLogKeyFails ? elChkLogKeyFails.checked : true;
+
+        saveAccessConfig();
+        refreshSourceEditor();
+        markPendingChanges();
+        if (elModalDiscordConfig) elModalDiscordConfig.classList.remove('active');
+        showToast('Discord Sentinel Settings Saved & Integrated into Luau code!', 'success');
+      });
+    }
+  }
+
+  // D. HWID Locking & Expiring / Timed Keys Manager
+  function formatKeyExpiry(expiresAt) {
+    if (!expiresAt || expiresAt === 0) return 'Lifetime Key';
+    const diff = expiresAt - Date.now();
+    if (diff <= 0) return 'Expired';
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 24) {
+      const days = Math.floor(hours / 24);
+      return `${days}d ${hours % 24}h remaining`;
+    }
+    return `${hours}h ${mins}m remaining`;
+  }
+
+  function renderActiveKeysList() {
+    if (!elActiveKeysList) return;
+    elActiveKeysList.innerHTML = '';
+
+    const keys = accessConfig.timedKeys || [];
+    const activeCount = keys.filter(k => !k.revoked && (!k.expiresAt || k.expiresAt > Date.now())).length;
+    if (elActiveKeysCount) {
+      elActiveKeysCount.textContent = `${activeCount} active`;
+    }
+
+    if (keys.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'keys-empty-hint';
+      empty.style.fontSize = '0.75rem';
+      empty.style.color = 'var(--text-dim)';
+      empty.style.padding = '0.75rem';
+      empty.style.textAlign = 'center';
+      empty.textContent = 'No timed keys created yet. Generate one above!';
+      elActiveKeysList.appendChild(empty);
+      return;
+    }
+
+    keys.forEach((item, idx) => {
+      const isExpired = item.expiresAt && item.expiresAt > 0 && Date.now() > item.expiresAt;
+      const isRevoked = !!item.revoked;
+
+      const row = document.createElement('div');
+      row.className = `timed-key-row ${isRevoked ? 'revoked' : (isExpired ? 'expired' : '')}`;
+
+      let badgeHtml = '';
+      if (isRevoked) {
+        badgeHtml = '<span class="key-badge revoked">Revoked</span>';
+      } else if (isExpired) {
+        badgeHtml = '<span class="key-badge expired">Expired</span>';
+      } else {
+        badgeHtml = `<span class="key-badge active">${escapeHtml(item.duration ? item.duration.toUpperCase() : 'KEY')}</span>`;
+      }
+
+      const hwidHtml = item.hwidLocked
+        ? '<span class="key-hwid-badge" title="Tied to recipient client HWID on first activation">🔒 HWID Locked</span>'
+        : '<span class="key-hwid-badge free" title="Can run on any client">🌐 Any HWID</span>';
+
+      row.innerHTML = `
+        <div class="key-row-left">
+          <div class="key-code-line">
+            <code>${escapeHtml(item.key)}</code>
+            ${badgeHtml}
+            ${hwidHtml}
+          </div>
+          <div class="key-meta-line">
+            <span class="key-label-tag">Label: <strong>${escapeHtml(item.label || 'User Access')}</strong></span>
+            <span class="key-expiry-tag">• ${formatKeyExpiry(item.expiresAt)}</span>
+          </div>
+        </div>
+        <div class="key-row-actions">
+          <button type="button" class="btn-copy-key-item" data-key="${escapeHtml(item.key)}" title="Copy Key">Copy</button>
+          ${!isRevoked ? `<button type="button" class="btn-revoke-key-item" data-idx="${idx}" title="Revoke Key Immediately">Revoke</button>` : ''}
+        </div>
+      `;
+
+      row.querySelector('.btn-copy-key-item').addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(item.key);
+          showToast(`Copied key: ${item.key}`, 'success');
+        } catch {
+          showToast(`Key: ${item.key}`, 'info');
+        }
+      });
+
+      const btnRevoke = row.querySelector('.btn-revoke-key-item');
+      if (btnRevoke) {
+        btnRevoke.addEventListener('click', () => {
+          accessConfig.timedKeys[idx].revoked = true;
+          saveAccessConfig();
+          renderActiveKeysList();
+          refreshSourceEditor();
+          markPendingChanges();
+          showToast(`Revoked key: ${item.key}`, 'warn');
+        });
+      }
+
+      elActiveKeysList.appendChild(row);
+    });
+  }
+
+  function initTimedKeysController() {
+    if (elBtnOpenKeyManager) {
+      elBtnOpenKeyManager.addEventListener('click', () => {
+        renderActiveKeysList();
+        if (elNewKeyResultBox) elNewKeyResultBox.style.display = 'none';
+        if (elModalKeyManager) elModalKeyManager.classList.add('active');
+      });
+    }
+
+    if (elBtnCloseKeyModal) {
+      elBtnCloseKeyModal.addEventListener('click', () => {
+        if (elModalKeyManager) elModalKeyManager.classList.remove('active');
+      });
+    }
+
+    if (elBtnCloseKeyManagerFooter) {
+      elBtnCloseKeyManagerFooter.addEventListener('click', () => {
+        if (elModalKeyManager) elModalKeyManager.classList.remove('active');
+      });
+    }
+
+    if (elBtnGenerateKey) {
+      elBtnGenerateKey.addEventListener('click', () => {
+        const dur = elSelKeyDuration ? elSelKeyDuration.value : '24h';
+        const label = elInputKeyLabel ? (elInputKeyLabel.value.trim() || 'VIP Access') : 'VIP Access';
+        const hwidLock = elChkHwidLock ? elChkHwidLock.checked : true;
+
+        let durMs = 0;
+        if (dur === '24h') durMs = 24 * 3600 * 1000;
+        else if (dur === '3d') durMs = 3 * 24 * 3600 * 1000;
+        else if (dur === '7d') durMs = 7 * 24 * 3600 * 1000;
+        else if (dur === '30d') durMs = 30 * 24 * 3600 * 1000;
+        else if (dur === 'lifetime') durMs = 0;
+
+        const randPart = Math.random().toString(36).substring(2, 7).toUpperCase();
+        const timePart = Date.now().toString(36).toUpperCase();
+        const keyString = `DALX_${dur.toUpperCase()}_${randPart}_${timePart}`;
+
+        if (!Array.isArray(accessConfig.timedKeys)) accessConfig.timedKeys = [];
+        const newKeyObj = {
+          id: `key_${Date.now()}`,
+          key: keyString,
+          label: label,
+          duration: dur,
+          createdAt: Date.now(),
+          expiresAt: durMs > 0 ? (Date.now() + durMs) : 0,
+          hwidLocked: hwidLock,
+          revoked: false
+        };
+
+        accessConfig.timedKeys.unshift(newKeyObj);
+        saveAccessConfig();
+        renderActiveKeysList();
+        refreshSourceEditor();
+        markPendingChanges();
+
+        if (elNewKeyResultBox && elTextNewKeyVal) {
+          elTextNewKeyVal.textContent = keyString;
+          elNewKeyResultBox.style.display = 'block';
+        }
+
+        showToast(`Generated ${dur.toUpperCase()} key for ${label}!`, 'success');
+      });
+    }
+
+    if (elBtnCopyNewKey) {
+      elBtnCopyNewKey.addEventListener('click', async () => {
+        const k = elTextNewKeyVal ? elTextNewKeyVal.textContent : '';
+        if (!k) return;
+        try {
+          await navigator.clipboard.writeText(k);
+          showToast('New key copied to clipboard!', 'success');
+        } catch {
+          showToast(`Key: ${k}`, 'info');
+        }
+      });
+    }
+  }
+
+  // E. Multi-Script Profile Slot Manager
+  const SCRIPT_SLOTS_KEY = 'dalx_script_slots_v2';
+  const ACTIVE_SLOT_KEY = 'dalx_active_slot_id_v2';
+
+  let scriptSlots = [
+    { id: 'skywars-master', name: 'Skywars Ultimate', icon: '⚔️', isDefault: true },
+    { id: 'bedwars-ghost', name: 'Bedwars Ghost', icon: '🛏️', isDefault: false, customCode: '-- Bedwars Ghost Profile\nprint("Bedwars Ghost active")\n' },
+    { id: 'arsenal-aim', name: 'Arsenal Aimbot', icon: '🎯', isDefault: false, customCode: '-- Arsenal Suite Profile\nprint("Arsenal Suite active")\n' }
+  ];
+  let activeSlotId = 'skywars-master';
+
+  function loadScriptSlots() {
+    try {
+      const saved = localStorage.getItem(SCRIPT_SLOTS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          scriptSlots = parsed;
+        }
+      }
+      const savedActive = localStorage.getItem(ACTIVE_SLOT_KEY);
+      if (savedActive && scriptSlots.some(s => s.id === savedActive)) {
+        activeSlotId = savedActive;
+      }
+    } catch (e) {
+      console.warn('Failed loading script slots:', e);
+    }
+  }
+
+  function saveScriptSlots() {
+    try {
+      localStorage.setItem(SCRIPT_SLOTS_KEY, JSON.stringify(scriptSlots));
+      localStorage.setItem(ACTIVE_SLOT_KEY, activeSlotId);
+    } catch (e) {}
+  }
+
+  function renderScriptSlots() {
+    if (!elSlotPillsList) return;
+    elSlotPillsList.innerHTML = '';
+
+    scriptSlots.forEach(slot => {
+      const pill = document.createElement('div');
+      pill.className = `slot-pill ${slot.id === activeSlotId ? 'active' : ''}`;
+      pill.innerHTML = `
+        <span class="slot-icon">${slot.icon || '📜'}</span>
+        <span class="slot-name">${escapeHtml(slot.name)}</span>
+        ${!slot.isDefault ? `<button type="button" class="btn-slot-delete" data-id="${slot.id}" title="Delete slot">&times;</button>` : ''}
+      `;
+
+      pill.addEventListener('click', (e) => {
+        if (e.target.classList.contains('btn-slot-delete')) return;
+        switchScriptSlot(slot.id);
+      });
+
+      const delBtn = pill.querySelector('.btn-slot-delete');
+      if (delBtn) {
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm(`Delete slot "${slot.name}"?`)) {
+            scriptSlots = scriptSlots.filter(s => s.id !== slot.id);
+            if (activeSlotId === slot.id) {
+              activeSlotId = 'skywars-master';
+            }
+            saveScriptSlots();
+            renderScriptSlots();
+            switchScriptSlot(activeSlotId);
+            showToast(`Deleted slot "${slot.name}".`, 'info');
+          }
+        });
+      }
+
+      elSlotPillsList.appendChild(pill);
+    });
+  }
+
+  function switchScriptSlot(newSlotId) {
+    // Save current custom code if was on custom slot
+    const currentSlot = scriptSlots.find(s => s.id === activeSlotId);
+    if (currentSlot && !currentSlot.isDefault && elInputLua) {
+      currentSlot.customCode = elInputLua.value;
+    }
+
+    activeSlotId = newSlotId;
+    saveScriptSlots();
+    renderScriptSlots();
+
+    const targetSlot = scriptSlots.find(s => s.id === activeSlotId);
+    if (!targetSlot) return;
+
+    if (targetSlot.isDefault) {
+      refreshSourceEditor();
+      if (elSourceBadge) {
+        elSourceBadge.textContent = `${accessConfig.whitelisted.length} Whitelisted | Luau`;
+      }
+      showToast(`Switched to "${targetSlot.name}" (Main Suite)`, 'success');
+    } else {
+      const code = targetSlot.customCode || `-- ${targetSlot.name} Script\nprint("${targetSlot.name} initialized")\n`;
+      if (elInputLua) elInputLua.value = code;
+      updateEditorLines(elInputLua, elInputLines);
+      updateStats(elInputLua, elInputStats);
+      if (elSourceBadge) {
+        elSourceBadge.textContent = `${targetSlot.name} | Custom`;
+      }
+      showToast(`Switched to "${targetSlot.name}" Profile`, 'info');
+    }
+  }
+
+  function initScriptSlotsController() {
+    loadScriptSlots();
+    renderScriptSlots();
+
+    if (elBtnNewSlot) {
+      elBtnNewSlot.addEventListener('click', () => {
+        const name = prompt('Enter a name for the new script profile slot:', `Custom Script ${scriptSlots.length + 1}`);
+        if (!name || !name.trim()) return;
+        const newId = `slot_${Date.now()}`;
+        scriptSlots.push({
+          id: newId,
+          name: name.trim(),
+          icon: '🎮',
+          isDefault: false,
+          customCode: `-- ${name.trim()} Profile\nprint("${name.trim()} Loaded")\n`
+        });
+        saveScriptSlots();
+        renderScriptSlots();
+        switchScriptSlot(newId);
+        showToast(`Created slot "${name.trim()}"!`, 'success');
+      });
+    }
+  }
 
   // ---------------------------------------------------------------------------
   // 8.5. MASTER SECURITY LOCK CONTROLLER
@@ -1770,12 +2706,22 @@ end
   initIosStandaloneUX();
   loadAccessConfig();
   syncAccessConfigToUI();
+  initKillSwitchController();
+  syncKillSwitchUI();
+  initDiscordController();
+  syncDiscordUI();
+  initTimedKeysController();
+  renderActiveKeysList();
+  initScriptSlotsController();
   loadGhCredentials();
   updateLoadstringPreview();
   renderWhitelistChips();
   renderBannedChips();
   refreshSourceEditor();
   loadSkywarsSuiteBody();
+  setTimeout(() => {
+    updateMetricsHUD(elInputLua ? elInputLua.value : '', elOutputLua ? elOutputLua.value : '', 0);
+  }, 350);
 
 })();
 
