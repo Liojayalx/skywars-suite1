@@ -251,6 +251,7 @@
 
   // GitHub Auto-Publisher Elements
   const elBtnPublishGithub = document.getElementById('btnPublishGithub');
+  const elBtnCloudSync = document.getElementById('btnCloudSync');
   const elModalGithubSync = document.getElementById('modalGithubSync');
   const elModalGithubClose = document.getElementById('modalGithubClose');
   const elInputGhToken = document.getElementById('inputGhToken');
@@ -2712,6 +2713,105 @@ end
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // INSTANT CLOUD SYNC (GitHub access_config.json) - 1 Second Fast Sync
+  // ---------------------------------------------------------------------------
+
+  async function syncCloudConfigToGitHub() {
+    const creds = getGhCredentials();
+    if (!creds.token || !creds.owner || !creds.repo) {
+      showToast('GitHub credentials missing! Click "🚀 Publish to GitHub" first to set your token.', 'warn');
+      if (elBtnPublishGithub) elBtnPublishGithub.click();
+      return;
+    }
+
+    if (elBtnCloudSync) {
+      elBtnCloudSync.disabled = true;
+      elBtnCloudSync.innerHTML = `
+        <svg class="spinner" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="3" stroke-dasharray="32" stroke-linecap="round"></circle>
+        </svg>
+        <span>Syncing Cloud Config...</span>
+      `;
+    }
+
+    try {
+      const configPayload = {
+        version: "3.3",
+        killSwitchArmed: !!accessConfig.killSwitchArmed,
+        killSwitchReason: accessConfig.killSwitchReason || "⚠️ Skywars Suite is temporarily offline for emergency maintenance.",
+        whitelisted: accessConfig.whitelisted || [],
+        banned: accessConfig.banned || [],
+        key: accessConfig.key || "DORKSTHATAINTWHITELISTED",
+        whitelistSkipsKey: !!accessConfig.whitelistSkipsKey,
+        whitelistOnlyMode: !!accessConfig.whitelistOnlyMode,
+        kickOnFail: !!accessConfig.kickOnFail,
+        notifications: !!accessConfig.notifications,
+        lastUpdated: new Date().toISOString()
+      };
+
+      const configJsonStr = JSON.stringify(configPayload, null, 2);
+      const targetPath = "access_config.json";
+      const apiUrl = `https://api.github.com/repos/${creds.owner}/${creds.repo}/contents/${targetPath}`;
+      const headers = {
+        'Authorization': `Bearer ${creds.token}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      };
+
+      let sha = null;
+      try {
+        const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(creds.branch)}`, { method: 'GET', headers });
+        if (getRes.ok) {
+          const getData = await getRes.json();
+          sha = getData.sha;
+        }
+      } catch (e) {
+        console.warn('Could not check existing access_config.json SHA:', e);
+      }
+
+      const putBody = {
+        message: `⚡ Instant Cloud Sync: update whitelist, bans & killswitch (${new Date().toLocaleTimeString()})`,
+        content: utf8ToBase64(configJsonStr),
+        branch: creds.branch
+      };
+      if (sha) putBody.sha = sha;
+
+      const putRes = await fetch(apiUrl, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(putBody)
+      });
+
+      if (!putRes.ok) {
+        const errData = await putRes.json().catch(() => ({}));
+        throw new Error(errData.message || `GitHub API error (${putRes.status})`);
+      }
+
+      const putData = await putRes.json();
+      const commitSha = putData.commit && putData.commit.sha ? putData.commit.sha.substring(0, 7) : 'live';
+
+      markChangesDeployed(commitSha);
+      logConsole(`⚡ Instant Cloud Sync complete! Pushed access_config.json to ${creds.owner}/${creds.repo}@${creds.branch} [${commitSha}]`, 'stdout');
+      showToast('⚡ Instant Cloud Sync complete! Whitelist & Kill Switch live in Roblox in 1s!', 'success');
+
+    } catch (err) {
+      console.error('Cloud Sync error:', err);
+      showToast(`Cloud Sync Failed: ${err.message}`, 'error');
+      logConsole(`Cloud Sync Error: ${err.message}`, 'stderr');
+    } finally {
+      if (elBtnCloudSync) {
+        elBtnCloudSync.disabled = false;
+        elBtnCloudSync.innerHTML = `
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span>⚡ Instant Cloud Sync</span>
+        `;
+      }
+    }
+  }
+
   // GitHub Auto-Publisher Event Listeners
   if (elBtnPublishGithub) {
     elBtnPublishGithub.addEventListener('click', () => {
@@ -2724,15 +2824,21 @@ end
     });
   }
 
+  if (elBtnCloudSync) {
+    elBtnCloudSync.addEventListener('click', () => {
+      syncCloudConfigToGitHub();
+    });
+  }
+
   if (elBtnQuickDeployBans) {
     elBtnQuickDeployBans.addEventListener('click', () => {
-      publishToGitHub();
+      syncCloudConfigToGitHub();
     });
   }
 
   if (elBtnQuickDeployWhitelist) {
     elBtnQuickDeployWhitelist.addEventListener('click', () => {
-      publishToGitHub();
+      syncCloudConfigToGitHub();
     });
   }
 
