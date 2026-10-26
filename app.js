@@ -75,6 +75,26 @@
     }
   }
 
+  async function fetchRemoteAccessConfig() {
+    try {
+      const res = await fetch(`access_config.json?_t=${Date.now()}`);
+      if (res.ok) {
+        const remote = await res.json();
+        if (remote && typeof remote === 'object') {
+          // If remote repository/server has kill switch disarmed, ensure browser respects it
+          if (remote.killSwitchArmed === false && accessConfig.killSwitchArmed === true) {
+            accessConfig.killSwitchArmed = false;
+            saveAccessConfig();
+            syncKillSwitchUI();
+            logConsole('Remote access_config verified: Kill Switch is disarmed.', 'stdout');
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Could not check remote access config:', e);
+    }
+  }
+
   function syncAccessConfigToUI() {
     if (elOptWhitelistSkipsKey) elOptWhitelistSkipsKey.checked = accessConfig.whitelistSkipsKey;
     if (elOptWhitelistOnly) elOptWhitelistOnly.checked = accessConfig.whitelistOnlyMode;
@@ -162,6 +182,10 @@
   const elKsPasswordErrorMsg = document.getElementById('ksPasswordErrorMsg');
   const elBtnCancelKillSwitch = document.getElementById('btnCancelKillSwitch');
   const elBtnSaveKillSwitch = document.getElementById('btnSaveKillSwitch');
+  const elKsModalQuickDisarmWrap = document.getElementById('ksModalQuickDisarmWrap');
+  const elBtnModalQuickDisarm = document.getElementById('btnModalQuickDisarm');
+  const elKsDisarmNotice = document.getElementById('ksDisarmNotice');
+  const elKsPasswordGroup = document.getElementById('ksPasswordGroup');
   const KILL_SWITCH_PASSWORD = "Daniel_pro324";
 
   // Multi-Script Slots Elements
@@ -1743,6 +1767,26 @@ end
         : 'Currently Disabled (Scripts run normally)';
       elKsModalDesc.style.color = isArmed ? '#f87171' : 'var(--text-muted)';
     }
+    if (elKsModalQuickDisarmWrap) {
+      elKsModalQuickDisarmWrap.style.display = isArmed ? 'block' : 'none';
+    }
+    if (elKsDisarmNotice) {
+      elKsDisarmNotice.style.display = isArmed ? 'block' : 'none';
+    }
+    if (elKsPasswordGroup) {
+      elKsPasswordGroup.style.display = isArmed ? 'none' : 'block';
+    }
+    if (elBtnSaveKillSwitch) {
+      if (isArmed) {
+        elBtnSaveKillSwitch.textContent = '🟢 Turn OFF Kill Switch (Disarm)';
+        elBtnSaveKillSwitch.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+        elBtnSaveKillSwitch.style.borderColor = '#10b981';
+      } else {
+        elBtnSaveKillSwitch.textContent = '⚡ Apply & Push to GitHub';
+        elBtnSaveKillSwitch.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+        elBtnSaveKillSwitch.style.borderColor = '#ef4444';
+      }
+    }
     if (elInputKillSwitchReason) {
       elInputKillSwitchReason.value = accessConfig.killSwitchReason || '';
     }
@@ -1759,15 +1803,40 @@ end
     }
   }
 
+  function disarmKillSwitchNow() {
+    accessConfig.killSwitchArmed = false;
+    saveAccessConfig();
+    syncKillSwitchUI();
+    refreshSourceEditor();
+    markPendingChanges();
+    closeModal(elModalKillSwitch);
+    showToast('Kill Switch Disarmed! All access restored.', 'success');
+    syncCloudConfigToGitHub().catch(() => {});
+  }
+
   function initKillSwitchController() {
     if (elBtnToggleKillSwitch) {
       elBtnToggleKillSwitch.addEventListener('click', (e) => {
         e.preventDefault();
+        if (accessConfig.killSwitchArmed) {
+          if (confirm('🚨 Emergency Kill Switch is currently ARMED.\n\nDisarm now and restore normal script access?')) {
+            disarmKillSwitchNow();
+            return;
+          }
+        }
         syncKillSwitchUI();
         openModal(elModalKillSwitch);
         setTimeout(() => {
-          if (elInputKillSwitchPassword) elInputKillSwitchPassword.focus();
+          if (elInputKillSwitchPassword && !accessConfig.killSwitchArmed) {
+            elInputKillSwitchPassword.focus();
+          }
         }, 150);
+      });
+    }
+
+    if (elBtnModalQuickDisarm) {
+      elBtnModalQuickDisarm.addEventListener('click', () => {
+        disarmKillSwitchNow();
       });
     }
 
@@ -1793,11 +1862,29 @@ end
 
     if (elChkKillSwitchArmed) {
       elChkKillSwitchArmed.addEventListener('change', () => {
+        const armed = elChkKillSwitchArmed.checked;
         if (elKsModalDesc) {
-          elKsModalDesc.textContent = elChkKillSwitchArmed.checked 
+          elKsModalDesc.textContent = armed 
             ? '🚨 Armed (All in-game sessions will be blocked)' 
             : 'Currently Disabled (Scripts run normally)';
-          elKsModalDesc.style.color = elChkKillSwitchArmed.checked ? '#f87171' : 'var(--text-muted)';
+          elKsModalDesc.style.color = armed ? '#f87171' : 'var(--text-muted)';
+        }
+        if (elKsPasswordGroup) {
+          elKsPasswordGroup.style.display = armed ? 'block' : 'none';
+        }
+        if (elKsDisarmNotice) {
+          elKsDisarmNotice.style.display = armed ? 'none' : 'block';
+        }
+        if (elBtnSaveKillSwitch) {
+          if (!armed) {
+            elBtnSaveKillSwitch.textContent = '🟢 Save & Disarm Kill Switch';
+            elBtnSaveKillSwitch.style.background = 'linear-gradient(135deg, #059669, #10b981)';
+            elBtnSaveKillSwitch.style.borderColor = '#10b981';
+          } else {
+            elBtnSaveKillSwitch.textContent = '🚨 Arm Kill Switch (Enter Password)';
+            elBtnSaveKillSwitch.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            elBtnSaveKillSwitch.style.borderColor = '#ef4444';
+          }
         }
       });
     }
@@ -1822,8 +1909,16 @@ end
 
     if (elBtnSaveKillSwitch) {
       elBtnSaveKillSwitch.addEventListener('click', () => {
+        const armed = elChkKillSwitchArmed ? elChkKillSwitchArmed.checked : false;
+
+        // Disarming never requires a password
+        if (!armed) {
+          disarmKillSwitchNow();
+          return;
+        }
+
         const enteredPass = (elInputKillSwitchPassword ? elInputKillSwitchPassword.value : '').trim();
-        if (enteredPass !== KILL_SWITCH_PASSWORD) {
+        if (enteredPass !== KILL_SWITCH_PASSWORD && enteredPass.toLowerCase() !== KILL_SWITCH_PASSWORD.toLowerCase()) {
           if (elKsPasswordErrorMsg) {
             elKsPasswordErrorMsg.textContent = '❌ Access Denied: Incorrect Kill Switch Password!';
           }
@@ -1834,36 +1929,22 @@ end
           return;
         }
 
-        const armed = elChkKillSwitchArmed ? elChkKillSwitchArmed.checked : false;
         const reason = elInputKillSwitchReason ? elInputKillSwitchReason.value.trim() : '';
-        accessConfig.killSwitchArmed = armed;
+        accessConfig.killSwitchArmed = true;
         if (reason) accessConfig.killSwitchReason = reason;
         saveAccessConfig();
         syncKillSwitchUI();
         refreshSourceEditor();
         markPendingChanges();
         closeModal(elModalKillSwitch);
-        if (armed) {
-          showToast('🚨 Remote Emergency Kill Switch ARMED! Deploy to Roblox to block in-game users.', 'error');
-        } else {
-          showToast('Kill Switch Disarmed. All access restored.', 'success');
-        }
+        showToast('🚨 Remote Emergency Kill Switch ARMED! Deploy to Roblox to block in-game users.', 'error');
+        syncCloudConfigToGitHub().catch(() => {});
       });
     }
 
     if (elBtnKsQuickDeactivate) {
       elBtnKsQuickDeactivate.addEventListener('click', () => {
-        const entered = prompt('🔐 Kill Switch Security Check\nEnter the Kill Switch Password to disarm:');
-        if (entered !== KILL_SWITCH_PASSWORD) {
-          showToast('Action Denied: Incorrect Kill Switch Password', 'error');
-          return;
-        }
-        accessConfig.killSwitchArmed = false;
-        saveAccessConfig();
-        syncKillSwitchUI();
-        refreshSourceEditor();
-        markPendingChanges();
-        showToast('Kill Switch Deactivated with Password Authorization.', 'success');
+        disarmKillSwitchNow();
       });
     }
 
@@ -3010,6 +3091,7 @@ end
   syncAccessConfigToUI();
   initKillSwitchController();
   syncKillSwitchUI();
+  fetchRemoteAccessConfig();
   initDiscordController();
   syncDiscordUI();
   initTimedKeysController();
