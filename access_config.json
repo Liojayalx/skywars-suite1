@@ -15,6 +15,5 @@
   "whitelistSkipsKey": true,
   "whitelistOnlyMode": false,
   "kickOnFail": true,
-  "notifications": true,
-  "lastUpdated": "2026-10-26T01:00:42.122Z"
+  "notifications": true
 }
