@@ -34,7 +34,6 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/danescob724-afk/skywa
 - **1-Click Deploy**: Click **⚡ Deploy Bans to Roblox** to immediately compile and push the updated ban list to GitHub.
 
 ### 3. DALX Key System Configuration
-- **Custom Access Key**: Set any secret key string (defaults to `DORKSTHATAINTWHITELISTED`).
 - **Saved Key File**: Configure client storage filename (defaults to `SkywarsSuite_Key.txt`).
 - **Auto-Remember Key Toggle**: Auto-pass subsequent runs if the client already verified the key.
 - **Roblox In-Game Banners**: Show native notifications on verify (`Welcome <Name>! Whitelist verified`).
