@@ -13,7 +13,7 @@ It integrates a real-time **Access Control & Key System Manager**, dynamic sourc
 Run this permanent loadstring in any modern Roblox executor (Real, Wave, Synapse, Electron, etc.):
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/danescob724-afk/skywars-suite1/main/skywars_obfuscated.lua?t=" .. tick()))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Liojayalx/skywars-suite1/main/skywars_obfuscated.lua?t=" .. tick()))()
 ```
 
 > **Automatic Cache-Bypass**: The `?t=" .. tick()` parameter guarantees that Roblox immediately fetches your latest ban list, whitelists, and Fortress VM build without waiting for GitHub CDN cache.
