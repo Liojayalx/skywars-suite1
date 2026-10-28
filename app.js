@@ -2625,8 +2625,9 @@ end
       const _p4 = 'uBnGiS3XJhbH';
       localStorage.setItem('gh_pat_token', _p1 + _p2 + _p3 + _p4);
     }
+    const savedOwner = localStorage.getItem('gh_owner');
     if (elInputGhToken) elInputGhToken.value = localStorage.getItem('gh_pat_token') || '';
-    if (elInputGhOwner) elInputGhOwner.value = localStorage.getItem('gh_owner') || 'danescob724-afk';
+    if (elInputGhOwner) elInputGhOwner.value = (savedOwner && savedOwner !== 'danescob724-afk') ? savedOwner : 'Liojayalx';
     if (elInputGhRepo) elInputGhRepo.value = localStorage.getItem('gh_repo') || 'skywars-suite1';
     if (elInputGhBranch) elInputGhBranch.value = localStorage.getItem('gh_branch') || 'main';
     if (elInputGhFilePath) elInputGhFilePath.value = localStorage.getItem('gh_path') || 'skywars_obfuscated.lua';
@@ -2634,10 +2635,11 @@ end
 
 
   function getGhCredentials() {
+    const rawOwner = (elInputGhOwner ? elInputGhOwner.value.trim() : '') || 'Liojayalx';
     return {
       token: (elInputGhToken ? elInputGhToken.value.trim() : ''),
-      owner: (elInputGhOwner ? elInputGhOwner.value.trim() : ''),
-      repo: (elInputGhRepo ? elInputGhRepo.value.trim() : ''),
+      owner: (rawOwner === 'danescob724-afk' ? 'Liojayalx' : rawOwner),
+      repo: (elInputGhRepo ? elInputGhRepo.value.trim() : '') || 'skywars-suite1',
       branch: (elInputGhBranch && elInputGhBranch.value.trim()) || 'main',
       filePath: (elInputGhFilePath && elInputGhFilePath.value.trim()) || 'skywars_obfuscated.lua'
     };
@@ -2677,6 +2679,86 @@ end
     return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
       return String.fromCharCode(parseInt(p1, 16));
     }));
+  }
+
+  /**
+   * Fetches the current live file blob SHA directly from GitHub, strictly bypassing browser caches.
+   */
+  async function fetchLiveFileSha(apiUrl, branch, headers) {
+    try {
+      const cacheBuster = `_t=${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const separator = apiUrl.includes('?') ? '&' : '?';
+      const freshUrl = `${apiUrl}${separator}ref=${encodeURIComponent(branch)}&${cacheBuster}`;
+      const res = await fetch(freshUrl, {
+        method: 'GET',
+        headers: {
+          ...headers,
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'If-None-Match': ''
+        },
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.sha || null;
+      }
+    } catch (e) {
+      console.warn('Could not fetch live file SHA:', e);
+    }
+    return null;
+  }
+
+  /**
+   * Robust GitHub file pusher with automatic 409 Conflict / SHA mismatch recovery.
+   */
+  async function pushFileToGitHubWithRetry({ apiUrl, headers, branch, commitMessage, contentBase64, onConflictRetry }) {
+    // 1. Fetch current live SHA with strict cache-busting
+    let sha = await fetchLiveFileSha(apiUrl, branch, headers);
+
+    const putBody = {
+      message: commitMessage,
+      content: contentBase64,
+      branch: branch
+    };
+    if (sha) putBody.sha = sha;
+
+    let putRes = await fetch(apiUrl, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(putBody)
+    });
+
+    // 2. Automatic 409 Conflict / SHA mismatch recovery
+    if (!putRes.ok && (putRes.status === 409 || putRes.status === 422)) {
+      const errData = await putRes.clone().json().catch(() => ({}));
+      const errMsg = (errData && errData.message) ? errData.message.toLowerCase() : '';
+      if (putRes.status === 409 || errMsg.includes('does not match') || errMsg.includes('sha')) {
+        console.warn(`[GitHub Push] Version conflict on ${apiUrl} (${errData.message}). Re-fetching live SHA and retrying...`);
+        if (typeof onConflictRetry === 'function') onConflictRetry();
+        
+        await new Promise(r => setTimeout(r, 350));
+        const liveSha = await fetchLiveFileSha(apiUrl, branch, headers);
+        if (liveSha) {
+          putBody.sha = liveSha;
+        } else {
+          delete putBody.sha;
+        }
+
+        putRes = await fetch(apiUrl, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify(putBody)
+        });
+      }
+    }
+
+    if (!putRes.ok) {
+      const errData = await putRes.json().catch(() => ({}));
+      throw new Error(errData.message || `GitHub API error (${putRes.status})`);
+    }
+
+    return await putRes.json();
   }
 
   async function publishToGitHub() {
@@ -2750,46 +2832,25 @@ end
         'Content-Type': 'application/json'
       };
 
-      // 1. Fetch current file SHA if it exists
-      let sha = null;
-      try {
-        const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(creds.branch)}`, {
-          method: 'GET',
-          headers
-        });
-        if (getRes.ok) {
-          const getData = await getRes.json();
-          sha = getData.sha;
-        }
-      } catch (e) {
-        console.warn('Could not check existing file SHA:', e);
-      }
-
-      // 2. Base64 encode the obfuscated code
+      // 1. Base64 encode the obfuscated code
       const base64Content = utf8ToBase64(codeToPublish);
+      const commitMessage = `Deploy obfuscated Skywars Suite build (${new Date().toISOString()})`;
 
-      // 3. Commit and push
-      const putBody = {
-        message: `Deploy obfuscated Skywars Suite build (${new Date().toISOString()})`,
-        content: base64Content,
-        branch: creds.branch
-      };
-      if (sha) {
-        putBody.sha = sha;
-      }
-
-      const putRes = await fetch(apiUrl, {
-        method: 'PUT',
+      // 2. Commit and push with automatic conflict resolution
+      const putData = await pushFileToGitHubWithRetry({
+        apiUrl,
         headers,
-        body: JSON.stringify(putBody)
+        branch: creds.branch,
+        commitMessage,
+        contentBase64: base64Content,
+        onConflictRetry: () => {
+          if (elGhSyncStatusMsg) {
+            elGhSyncStatusMsg.style.color = '#f59e0b';
+            elGhSyncStatusMsg.textContent = '🔄 Resolving version mismatch & retrying push...';
+          }
+        }
       });
 
-      if (!putRes.ok) {
-        const errData = await putRes.json().catch(() => ({}));
-        throw new Error(errData.message || `GitHub API error (${putRes.status})`);
-      }
-
-      const putData = await putRes.json();
       const commitSha = putData.commit && putData.commit.sha ? putData.commit.sha.substring(0, 7) : 'latest';
 
       if (elGhSyncStatusMsg) {
@@ -2871,36 +2932,20 @@ end
         'Content-Type': 'application/json'
       };
 
-      let sha = null;
-      try {
-        const getRes = await fetch(`${apiUrl}?ref=${encodeURIComponent(creds.branch)}`, { method: 'GET', headers });
-        if (getRes.ok) {
-          const getData = await getRes.json();
-          sha = getData.sha;
-        }
-      } catch (e) {
-        console.warn('Could not check existing access_config.json SHA:', e);
-      }
+      const commitMessage = `⚡ Instant Cloud Sync: update whitelist, bans & killswitch (${new Date().toLocaleTimeString()})`;
+      const contentBase64 = utf8ToBase64(configJsonStr);
 
-      const putBody = {
-        message: `⚡ Instant Cloud Sync: update whitelist, bans & killswitch (${new Date().toLocaleTimeString()})`,
-        content: utf8ToBase64(configJsonStr),
-        branch: creds.branch
-      };
-      if (sha) putBody.sha = sha;
-
-      const putRes = await fetch(apiUrl, {
-        method: 'PUT',
+      const putData = await pushFileToGitHubWithRetry({
+        apiUrl,
         headers,
-        body: JSON.stringify(putBody)
+        branch: creds.branch,
+        commitMessage,
+        contentBase64,
+        onConflictRetry: () => {
+          logConsole('Resolving access_config.json version mismatch on GitHub...', 'stdout');
+        }
       });
 
-      if (!putRes.ok) {
-        const errData = await putRes.json().catch(() => ({}));
-        throw new Error(errData.message || `GitHub API error (${putRes.status})`);
-      }
-
-      const putData = await putRes.json();
       const commitSha = putData.commit && putData.commit.sha ? putData.commit.sha.substring(0, 7) : 'live';
 
       markChangesDeployed(commitSha);
