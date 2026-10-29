@@ -1174,14 +1174,22 @@ end
   // 3. SUITE BODY LOADER & INITIALIZATION
   // ---------------------------------------------------------------------------
 
+  function sanitizeSuiteBody(body) {
+    if (!body) return body;
+    return body
+      .replace(/pcall\(function\(\)\s*hum\.Health\s*=\s*0\s*end\)/g, '-- hum.Health reset removed')
+      .replace(/IY\.toggleToolInvisibility\(false\)/g, '-- tool invis removed')
+      .replace(/(\s+)cb\(state\)\r?\n(\s+updateBoxSize\(\))/g, '$1if state then cb(state) end\n$2');
+  }
+
   async function loadSkywarsSuiteBody() {
     if (typeof window !== 'undefined' && window.SKYWARS_SUITE_B64) {
       try {
         const bin = atob(window.SKYWARS_SUITE_B64);
         const bytes = new Uint8Array(bin.length);
         for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        skywarsSuiteBody = new TextDecoder('utf-8').decode(bytes);
-        logConsole(`Loaded 2,400 lines of Skywars Master Suite engine from bundled payload.`, 'stdout');
+        skywarsSuiteBody = sanitizeSuiteBody(new TextDecoder('utf-8').decode(bytes));
+        logConsole(`Loaded Skywars Master Suite engine from bundled payload.`, 'stdout');
         refreshSourceEditor();
         return;
       } catch (err) {
