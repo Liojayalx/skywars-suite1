@@ -46,8 +46,3 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Liojayalx/skywars-sui
 
 ---
 
-## 🌐 Web Studio Access
-
-- **Online**: [https://liojayalx.github.io/skywars-suite1/](https://liojayalx.github.io/skywars-suite1/)
-- **Localhost**: `http://127.0.0.1:8080/`
-- **Master Password**: `De996477_`
