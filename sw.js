@@ -1,13 +1,13 @@
 // Service Worker for Skywars Suite Studio PWA
-const CACHE_NAME = 'skywars-suite-v1.0';
+const CACHE_NAME = 'skywars-suite-v8.2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './style.css?v=5.1',
-  './app.js',
-  './skywars_body.js',
-  './obfuscator.js',
-  './lua-runner.js',
+  './style.css?v=8.0',
+  './app.js?v=8.2',
+  './skywars_body.js?v=8.2',
+  './obfuscator.js?v=8.2',
+  './lua-runner.js?v=8.2',
   './manifest.json',
   './assets/logo.jpg',
   './assets/apple-touch-icon.png',
