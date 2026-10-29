@@ -904,7 +904,7 @@ end
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) return cached;
-    } catch (e) {}
+    } catch (e) { }
 
     try {
       const controller = new AbortController();
@@ -931,7 +931,7 @@ end
             const thumbData = await thumbRes.json();
             if (thumbData && thumbData.data && thumbData.data[0] && thumbData.data[0].imageUrl) {
               const finalUrl = thumbData.data[0].imageUrl;
-              try { localStorage.setItem(cacheKey, finalUrl); } catch (e) {}
+              try { localStorage.setItem(cacheKey, finalUrl); } catch (e) { }
               return finalUrl;
             }
           }
@@ -956,7 +956,7 @@ end
         wrap.innerHTML = '';
         wrap.appendChild(img);
       };
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   function renderWhitelistChips() {
@@ -1770,8 +1770,8 @@ end
       elChkKillSwitchArmed.checked = isArmed;
     }
     if (elKsModalDesc) {
-      elKsModalDesc.textContent = isArmed 
-        ? '🚨 Armed (All in-game sessions will be blocked)' 
+      elKsModalDesc.textContent = isArmed
+        ? '🚨 Armed (All in-game sessions will be blocked)'
         : 'Currently Disabled (Scripts run normally)';
       elKsModalDesc.style.color = isArmed ? '#f87171' : 'var(--text-muted)';
     }
@@ -1819,7 +1819,7 @@ end
     markPendingChanges();
     closeModal(elModalKillSwitch);
     showToast('Kill Switch Disarmed! All access restored.', 'success');
-    syncCloudConfigToGitHub().catch(() => {});
+    syncCloudConfigToGitHub().catch(() => { });
   }
 
   function initKillSwitchController() {
@@ -1872,8 +1872,8 @@ end
       elChkKillSwitchArmed.addEventListener('change', () => {
         const armed = elChkKillSwitchArmed.checked;
         if (elKsModalDesc) {
-          elKsModalDesc.textContent = armed 
-            ? '🚨 Armed (All in-game sessions will be blocked)' 
+          elKsModalDesc.textContent = armed
+            ? '🚨 Armed (All in-game sessions will be blocked)'
             : 'Currently Disabled (Scripts run normally)';
           elKsModalDesc.style.color = armed ? '#f87171' : 'var(--text-muted)';
         }
@@ -1946,7 +1946,7 @@ end
         markPendingChanges();
         closeModal(elModalKillSwitch);
         showToast('🚨 Remote Emergency Kill Switch ARMED! Deploy to Roblox to block in-game users.', 'error');
-        syncCloudConfigToGitHub().catch(() => {});
+        syncCloudConfigToGitHub().catch(() => { });
       });
     }
 
@@ -2319,10 +2319,10 @@ end
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          scriptSlots = parsed.filter(s => 
-            s.id !== 'skywars-master' && 
-            s.id !== 'bedwars-ghost' && 
-            s.name !== 'Skywars Ultimate' && 
+          scriptSlots = parsed.filter(s =>
+            s.id !== 'skywars-master' &&
+            s.id !== 'bedwars-ghost' &&
+            s.name !== 'Skywars Ultimate' &&
             s.name !== 'Bedwars Ghost'
           );
         }
@@ -2347,7 +2347,7 @@ end
       } else {
         localStorage.removeItem(ACTIVE_SLOT_KEY);
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   function renderScriptSlots() {
@@ -2478,7 +2478,7 @@ end
 
   function isMasterAuthenticated() {
     return localStorage.getItem(AUTH_STORAGE_KEY) === MASTER_PASSWORD_HASH ||
-           sessionStorage.getItem(AUTH_STORAGE_KEY) === MASTER_PASSWORD_HASH;
+      sessionStorage.getItem(AUTH_STORAGE_KEY) === MASTER_PASSWORD_HASH;
   }
 
   function lockStudio() {
@@ -2684,7 +2684,7 @@ end
   }
 
   function utf8ToBase64(str) {
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
       return String.fromCharCode(parseInt(p1, 16));
     }));
   }
@@ -2744,7 +2744,7 @@ end
       if (putRes.status === 409 || errMsg.includes('does not match') || errMsg.includes('sha')) {
         console.warn(`[GitHub Push] Version conflict on ${apiUrl} (${errData.message}). Re-fetching live SHA and retrying...`);
         if (typeof onConflictRetry === 'function') onConflictRetry();
-        
+
         await new Promise(r => setTimeout(r, 350));
         const liveSha = await fetchLiveFileSha(apiUrl, branch, headers);
         if (liveSha) {
@@ -3101,7 +3101,7 @@ end
         banner.style.display = 'none';
         try {
           localStorage.setItem('dalx_ios_banner_dismissed', 'true');
-        } catch (e) {}
+        } catch (e) { }
       });
     }
 
