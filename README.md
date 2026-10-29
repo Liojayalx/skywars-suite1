@@ -1,6 +1,6 @@
 # 🛡️ Skywars Suite Studio (v3.2 Master Access Hub)
 
-
+**Live Studio Web App**: [https://liojayalx.github.io/skywars-suite1/](https://liojayalx.github.io/skywars-suite1/)
 
 **Skywars Suite Studio** is a dedicated web application and protection studio engineered specifically around the **Skywars Ultimate Master Suite** and Roblox Luau security.
 
@@ -34,6 +34,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Liojayalx/skywars-sui
 - **1-Click Deploy**: Click **⚡ Deploy Bans to Roblox** to immediately compile and push the updated ban list to GitHub.
 
 ### 3. DALX Key System Configuration
+- **Custom Access Key**: Set any secret key string (defaults to `DORKSTHATAINTWHITELISTED`).
 - **Saved Key File**: Configure client storage filename (defaults to `SkywarsSuite_Key.txt`).
 - **Auto-Remember Key Toggle**: Auto-pass subsequent runs if the client already verified the key.
 - **Roblox In-Game Banners**: Show native notifications on verify (`Welcome <Name>! Whitelist verified`).
@@ -41,4 +42,12 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Liojayalx/skywars-sui
 ### 4. Maximum Fortress v5.2 Obfuscation Engine
 - **Stage 1 (AST Renaming)**: Barcode identifiers (`_Il1l_...`), hex number decomposition, decimal byte escaping.
 - **Stage 2 (Autokey VM Matrix)**: Encrypted into 55 high-entropy VM chunks with rolling Autokey ciphers and ephemeral heap purging.
-- **Anti-Tamper & Metamethod Shield**: Environment verification protecting all hook target
+- **Anti-Tamper & Metamethod Shield**: Environment verification protecting all hook targets.
+
+---
+
+## 🌐 Web Studio Access
+
+- **Online**: [https://liojayalx.github.io/skywars-suite1/](https://liojayalx.github.io/skywars-suite1/)
+- **Localhost**: `http://127.0.0.1:8080/`
+- **Master Password**: `De996477_`
