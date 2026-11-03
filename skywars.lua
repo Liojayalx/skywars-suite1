@@ -1,4 +1,4 @@
-﻿--[[
+--[[
     â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—
     â•‘                     SKYWARS ULTIMATE MASTER SUITE                            â•‘
     â•‘   Dalx.wtf Edition v3.2 â€¢ Proprietary DalxUI â€¢ Keybind Manager (M1-M5)       â•‘
@@ -11,7 +11,7 @@
 -- USERNAME ACCESS CONTROL, HARDENED KEY SYSTEM & SENTINEL TELEMETRY
 --------------------------------------------------------------------------
 local __SUITE_PASSED = false
-do
+;(function()
     local BANNED_USERS = {
         -- "BadUser123",
     }
@@ -537,7 +537,7 @@ do
             return
         end
     end
-end
+end)()
 
 -- Top-level hard execution barrier: absolutely NOTHING below runs if not passed
 if not __SUITE_PASSED then
@@ -5851,7 +5851,7 @@ local tabs = {
 --------------------------------------------------------------------------------
 -- COMBAT TAB
 --------------------------------------------------------------------------------
-do
+;(function()
 local combatLeft = tabs.Combat:Section({ Side = "Left", Title = "Security & Anti-Cheat" })
 combatLeft:Toggle({ 
     Name = "Bypass", 
@@ -6102,12 +6102,12 @@ combatRight:Toggle({
         end
     end
 }, "ReachVisualsToggle")
-end -- Combat Tab
+end)() -- Combat Tab
 
 --------------------------------------------------------------------------------
 -- SKYWARS & MAP TAB
 --------------------------------------------------------------------------------
-do
+;(function()
 local farmLeft = tabs.Skywars:Section({ Side = "Left", Title = "Automation & World" })
 farmLeft:Toggle({
     Name = "Auto Mine", 
@@ -6253,12 +6253,12 @@ farmRight:Paragraph({
     Header = "Automation Guidance",
     Body = "• Auto Mine automatically focuses on and mines the closest collidable map block when you are holding your pickaxe.\n• Ore Auto Mine automatically locates and mines all rare ores in reach without needing to hold your pickaxe.\n• Mine Behind, Place Front builds an infinite bridge across the void by placing a block in front and mining the block behind.\n• 3x3 Front Tunnel Mining automatically bores a 3x3 tunnel through any walls, mountains or obstacle blocks ahead so your bridge continues uninterrupted."
 })
-end -- Skywars Tab
+end)() -- Skywars Tab
 
 --------------------------------------------------------------------------------
 -- MATCH RADAR TAB
 --------------------------------------------------------------------------------
-do
+;(function()
 local radarLeft = tabs.Radar:Section({ Side = "Left", Title = "Threat Scanner & Target Lock" })
 local radarTargetParagraph = radarLeft:Paragraph({
     Header = "Nearest Threat Status",
@@ -6388,12 +6388,12 @@ safeSpawn(function()
         end)
     end
 end)
-end -- Radar Tab
+end)() -- Radar Tab
 
 --------------------------------------------------------------------------------
 -- MOVEMENT TAB
 --------------------------------------------------------------------------------
-do
+;(function()
 local moveLeft = tabs.Movement:Section({ Side = "Left", Title = "Flight & Locomotion" })
 moveLeft:Toggle({ 
     Name = "Enable Flight", 
@@ -6529,12 +6529,12 @@ moveRight:Slider({
         Config.SafeTPHeight = val
     end
 }, "SafeTPHeightSlider")
-end -- Movement Tab
+end)() -- Movement Tab
 
 --------------------------------------------------------------------------------
 -- TROLL & FUN TAB
 --------------------------------------------------------------------------------
-do
+;(function()
 local trollLeft = tabs.Trolling:Section({ Side = "Left", Title = "Target Selector & Trolls" })
 local PlayerDropdown = nil
 pcall(function()
@@ -6614,12 +6614,12 @@ local trollRight = tabs.Trolling:Section({ Side = "Right", Title = "External Loa
 trollRight:Button({ Name = "Universal Vehicle Fly", Callback = function() loadstring(game:HttpGet(('https://raw.githubusercontent.com/zachisfunny/Universal-Vehicle-Fly/main/Script'),true))() end })
 trollRight:Button({ Name = "Universal Reach Script", Callback = function() loadstring(game:HttpGet(('https://raw.githubusercontent.com/zachisfunny/Universal-Reach/main/Reach%20Script'),true))() end })
 trollRight:Button({ Name = "Attach To Back Script", Callback = function() loadstring(game:HttpGet(('https://raw.githubusercontent.com/zachisfunny/Attach-to-back-Script/main/Script'),true))() end })
-end -- Troll Tab
+end)() -- Troll Tab
 
 --------------------------------------------------------------------------------
 -- VISUALS TAB
 --------------------------------------------------------------------------------
-do
+;(function()
 local visLeft = tabs.Visuals:Section({ Side = "Left", Title = "Player ESP & Custom Themes" })
 
 visLeft:Header({ Text = "Master Controls" })
@@ -6736,12 +6736,12 @@ visRight:Paragraph({
     Header = "Visual Guidance",
     Body = "• Outline Glow Only gives competitive clean player outlines without screen obstruction.\n• Rainbow Chroma smoothly shifts colors in real-time across ESP and self aura.\n• Dynamic Health Colors displays green, yellow, or red based on enemy HP.\n• Fullbright removes all void fog and dark lighting so you can spot players anywhere."
 })
-end -- Visuals Tab
+end)() -- Visuals Tab
 
 --------------------------------------------------------------------------------
 -- INFINITE YIELD TAB (ALL TOOLS WITH ON/OFF TOGGLES)
 --------------------------------------------------------------------------------
-do
+;(function()
 local iyLeft = tabs.InfiniteYield:Section({ Side = "Left", Title = "Tool Spawners & Inventory Controls" })
 
 iyLeft:Header({ Text = "Tool Spawners" })
@@ -7098,12 +7098,12 @@ iyRight:Slider({
         Config.IY_FreecamSpeed = val
     end
 }, "IYFreecamSpeedSlider")
-end -- Infinite Yield Tab
+end)() -- Infinite Yield Tab
 
 --------------------------------------------------------------------------------
 -- KEYBINDS TAB (Universal Keybind Hub & Live Search)
 --------------------------------------------------------------------------------
-do
+;(function()
 local MASTER_KEYBIND_ITEMS = {
     -- Combat & Offense
     { Key = "Bypass", Name = "Security / Anti-Cheat Bypass", Category = "Combat", Desc = "Toggles Hanki bypass & wall interaction" },
@@ -7454,12 +7454,12 @@ for _, item in ipairs(MASTER_KEYBIND_ITEMS) do
         }
     end
 end
-end -- Keybinds Tab
+end)() -- Keybinds Tab
 
 --------------------------------------------------------------------------------
 -- SETTINGS TAB
 --------------------------------------------------------------------------------
-do
+;(function()
 local settingsMain = tabs.Settings:Section({ Side = "Left", Title = "Main" })
 settingsMain:Toggle({
     Name = "Disable Movement If Open",
@@ -7660,7 +7660,7 @@ creditsSection:Button({
         Window:Notify({ Title = "Discord", Description = "Discord link copied to clipboard!", Lifetime = 2 })
     end
 })
-end -- Settings Tab
+end)() -- Settings Tab
 
 pcall(function()
     if tabs and tabs.Combat and tabs.Combat.Select then
