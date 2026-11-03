@@ -3492,7 +3492,7 @@ local function resetToolRateLimits(tool)
         local currentTool = tool or getEquippedTool()
         if not currentTool then return end
         local tName = string.lower(currentTool.Name)
-        local isWeapon = string.find(tName, "sword") or string.find(tName, "pick") or string.find(tName, "axe") or string.find(tName, "bow")
+        local isWeapon = string.find(tName, "sword") or string.find(tName, "pick") or string.find(tName, "axe") or string.find(tName, "bow") or string.find(tName, "potion") or string.find(tName, "heal") or string.find(tName, "speed") or string.find(tName, "jump")
         local isBlock = string.find(tName, "block") or (currentTool:FindFirstChild("RemoteFunction") ~= nil)
         if not isWeapon and not isBlock then return end
 
@@ -7944,13 +7944,17 @@ safeConnect(RunService.Heartbeat, function(dt)
     end
 
     local name = string.lower(tool.Name)
-    -- Allowed tools: Pickaxe, Sword, Axe, Bow/Arrow, and Blocks
+    -- Allowed tools: Pickaxe, Sword, Axe, Bow/Arrow, Blocks, and Potions (Heal, Speed, Jump)
     local isAllowedTool = string.find(name, "sword") or 
                           string.find(name, "pick") or 
                           string.find(name, "axe") or 
                           string.find(name, "bow") or 
                           string.find(name, "arrow") or 
                           string.find(name, "block") or 
+                          string.find(name, "potion") or 
+                          string.find(name, "heal") or 
+                          string.find(name, "speed") or 
+                          string.find(name, "jump") or 
                           (tool:FindFirstChild("RemoteFunction") ~= nil)
     if not isAllowedTool then
         clickAccumulator = 0
