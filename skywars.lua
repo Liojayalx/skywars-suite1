@@ -666,11 +666,11 @@ local Config = {
     TargetName = "",
     BangSpeed = 3,
     ClickerEnabled = false,
-    CPS = 16,
+    CPS = 60,
     HoldToClick = false,
     BypassDetection = true,
-    SmartRateLimit = true,
-    BlockMaxCPS = 12,
+    SmartRateLimit = false,
+    BlockMaxCPS = 25,
     -- High-Ping Fast Bow Engine
     HighPingBowEnabled = true,
     BowAutoShoot = true,
@@ -3489,45 +3489,27 @@ end
 
 local function resetToolRateLimits(tool)
     pcall(function()
-        local function scanAndClear(fn, depth)
-            if not fn or type(fn) ~= "function" or (depth or 0) > 3 then return end
-            if type(debug.getupvalues) ~= "function" or type(debug.setupvalue) ~= "function" then return end
-            local uvs = debug.getupvalues(fn)
-            for idx, uv in ipairs(uvs) do
-                if type(uv) == "number" and uv >= 5 then
-                    pcall(debug.setupvalue, fn, idx, 0)
-                elseif type(uv) == "boolean" and uv == true then
-                    -- Reset the u116 lockout flag immediately
-                    pcall(debug.setupvalue, fn, idx, false)
-                elseif type(uv) == "function" then
-                    scanAndClear(uv, (depth or 0) + 1)
-                end
-            end
-        end
-
-        local toolsToScan = {}
-        if tool then
-            table.insert(toolsToScan, tool)
-        else
-            local cur = getEquippedTool()
-            if cur then table.insert(toolsToScan, cur) end
-            local bp = LocalPlayer:FindFirstChildOfClass("Backpack")
-            if bp then
-                for _, t in ipairs(bp:GetChildren()) do
-                    if t:IsA("Tool") then table.insert(toolsToScan, t) end
-                end
-            end
-        end
-
-        if type(getconnections) == "function" then
-            for _, t in ipairs(toolsToScan) do
-                pcall(function()
-                    for _, conn in ipairs(getconnections(t.Activated)) do
-                        if conn.Function then
-                            scanAndClear(conn.Function, 0)
+        -- Safe rate limit reset: ONLY reset the anti-autoclicker click counter (u111) when it approaches lockout.
+        -- NEVER wipe out face directions (u93: 1-4), position calculations, localBlocks flag, or other game state!
+        local currentTool = tool or getEquippedTool()
+        if currentTool and type(getconnections) == "function" and currentTool:FindFirstChild("Activated") then
+            for _, conn in ipairs(getconnections(currentTool.Activated)) do
+                if conn.Function then
+                    local uvs = debug.getupvalues(conn.Function)
+                    for idx, uv in ipairs(uvs) do
+                        if type(uv) == "number" and uv >= 15 then
+                            debug.setupvalue(conn.Function, idx, 0)
+                        elseif type(uv) == "function" then
+                            local inner = debug.getupvalues(uv)
+                            for i, inVal in ipairs(inner) do
+                                -- u111 click counter reaches 70 before 2s cooldown
+                                if type(inVal) == "number" and inVal >= 15 then
+                                    debug.setupvalue(uv, i, 0)
+                                end
+                            end
                         end
                     end
-                end)
+                end
             end
         end
     end)
@@ -3535,7 +3517,7 @@ end
 
 safeSpawn(function()
     while isSuiteActive do
-        task.wait(0.3)
+        task.wait(1.0)
         if Config.BypassDetection then
             resetToolRateLimits()
         end
@@ -3555,9 +3537,9 @@ local function performClick(tool)
             if Config.HighPingBowEnabled then
                 local ping = getNetworkPing()
                 if Config.BowOverdrive then
-                    burst = math.min(Config.BowMaxBurst, 4)
+                    burst = Config.BowMaxBurst
                 else
-                    burst = math.clamp(math.floor(ping / 50), Config.BowBaseBurst, 3)
+                    burst = math.clamp(math.floor(ping / 25), Config.BowBaseBurst, Config.BowMaxBurst)
                 end
             end
 
@@ -5894,16 +5876,16 @@ combatLeft:Toggle({
 
 combatLeft:Slider({ 
     Name = "Clicks Per Second (CPS)", 
-    Default = 16, 
+    Default = 60, 
     Minimum = 1, 
-    Maximum = 60, 
+    Maximum = 1000, 
     Precision = 0, 
     Callback = function(val) Config.CPS = val end 
 }, "CPSSlider")
 
 combatLeft:Toggle({ 
     Name = "Smart Rate Limit (Anti-Ban)", 
-    Default = true, 
+    Default = false, 
     Callback = function(val) Config.SmartRateLimit = val end 
 }, "SmartRateLimitToggle")
 
@@ -7977,10 +7959,10 @@ safeConnect(RunService.Heartbeat, function(dt)
     clickAccumulator = clickAccumulator + (dt * rate)
     local clicks = math.floor(clickAccumulator)
     if clicks > 0 then
-        clickAccumulator = math.clamp(clickAccumulator - clicks, 0, 1)
+        clickAccumulator = math.clamp(clickAccumulator - clicks, 0, 10)
         
         safeSpawn(function()
-            for _ = 1, math.min(clicks, 2) do
+            for _ = 1, math.min(clicks, 250) do
                 if not tool or not tool.Parent then break end
                 performClick(tool)
             end
@@ -7995,12 +7977,12 @@ safeSpawn(function()
         if isMouseDown and tool and string.find(string.lower(tool.Name), "bow") and isMatchActive() and IsLocalAlive() then
             if Config.BowAutoShoot or Config.HighPingBowEnabled then
                 performClick(tool)
-                task.wait(0.065)
+                task.wait(0.015)
             else
-                task.wait(0.09)
+                task.wait(0.04)
             end
         else
-            task.wait(0.05)
+            task.wait(0.04)
         end
     end
 end)
@@ -8168,7 +8150,6 @@ if not getgenv().__SkywarsMsgHooked then
         if method == "DisplaySystemMessage" then
             local args = {...}
             if args[1] and type(args[1]) == "string" and (args[1]:find("cooldown on tools") or args[1]:find("placing blocks too fast")) then
-                task.spawn(resetToolRateLimits)
                 return nil
             end
         end
