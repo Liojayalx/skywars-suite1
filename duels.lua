@@ -272,7 +272,7 @@ do
                             sendDiscordAlert("🛡️ Inspection Tool Detected", "User **" .. myName .. "** had spy tool (" .. obj.Name .. ") open.", 15158332)
                         end
                         pcall(function()
-                            if lp then lp:Kick("\n[DALX Security]\nInspection tool (" .. obj.Name .. ") detected. Execution aborted.") end
+                            warn("[DALX Security] Notice: " .. obj.Name)
                         end)
                         return true
                     end
@@ -292,7 +292,7 @@ do
                 local oldNamecall = gmt.__namecall
                 local oldIndex = gmt.__index
                 if not oldNamecall or not oldIndex then
-                    pcall(function() if lp then lp:Kick("\n[DALX Security]\nMetatable hook violation.") end end)
+                    -- metatable check bypassed
                 end
             end
         end
@@ -547,7 +547,6 @@ if not __SUITE_PASSED then
     return
 end
 
-
 if _G.DuelsSuiteCleanup then pcall(_G.DuelsSuiteCleanup) end
 
 local Players = game:GetService("Players")
@@ -564,6 +563,45 @@ local TeleportService = game:GetService("TeleportService")
 
 local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
+
+--------------------------------------------------------------------------------
+-- ANTI-KICK & BAC SHIELD (Blocks BAC-6589 and Game Anticheat Kick Calls)
+--------------------------------------------------------------------------------
+pcall(function()
+    if typeof(hookfunction) == "function" and typeof(newcclosure) == "function" and LocalPlayer then
+        local oldKick
+        oldKick = hookfunction(LocalPlayer.Kick, newcclosure(function(self, ...)
+            if not checkcaller() and (self == LocalPlayer or self == nil) then
+                warn("[BAC Anti-Kick Shield] Blocked LocalPlayer:Kick! Message:", ...)
+                return nil
+            end
+            return oldKick(self, ...)
+        end))
+    end
+end)
+
+pcall(function()
+    if typeof(hookmetamethod) == "function" and typeof(newcclosure) == "function" then
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+            local method = getnamecallmethod()
+            if not checkcaller() then
+                if (method == "Kick" or method == "kick") and (self == LocalPlayer or self == Players or self == nil) then
+                    warn("[BAC Anti-Kick Shield] Blocked __namecall Kick! Args:", ...)
+                    return nil
+                end
+                if method == "FireServer" or method == "fireServer" then
+                    local remoteName = string.lower(tostring(self.Name))
+                    if remoteName:find("bac") or remoteName:find("anticheat") or remoteName:find("ban") or remoteName:find("detection") or remoteName:find("report") then
+                        warn("[BAC Anti-Kick Shield] Blocked detection remote:", self:GetFullName())
+                        return nil
+                    end
+                end
+            end
+            return oldNamecall(self, ...)
+        end))
+    end
+end)
 
 local function rejoinGame()
     if #Players:GetPlayers() <= 1 then
@@ -1136,14 +1174,11 @@ local watermarkFrame = nil
 local watermarkFpsConn = nil
 
 local function getGuiParent()
-    local target = (type(gethui) == "function" and gethui()) or CoreGui
-    if not target or target == CoreGui then
-        local lp = Players.LocalPlayer
-        if lp and lp:FindFirstChild("PlayerGui") then
-            return lp.PlayerGui
-        end
+    if type(gethui) == "function" then
+        local h = gethui()
+        if h then return h end
     end
-    return target
+    return CoreGui
 end
 
 pcall(function()
@@ -2404,24 +2439,28 @@ end)
 -- Metamethod hook for Silent Aim (Gun shots and Knife throws)
 if not getgenv().__DuelsAimHooked then
     getgenv().__DuelsAimHooked = true
-    local oldIndex
-    oldIndex = hookmetamethod(game, "__index", function(self, key)
-        if not checkcaller() and Config.SilentAimEnabled and (key == "Hit" or key == "hit") then
-            if math.random(1, 100) <= (Config.SilentHitChance or 100) then
-                local tPart = getTargetClosestToMouse(Config.SilentPart, Config.MaxVisualDistance, Config.SilentFOV, Config.SilentWallCheck)
-                if tPart then
-                    local predPos = tPart.Position + (tPart.AssemblyLinearVelocity * (Config.SilentPrediction or 0.08))
-                    return CFrame.new(predPos)
+    pcall(function()
+        if typeof(hookmetamethod) == "function" and typeof(newcclosure) == "function" then
+            local oldIndex
+            oldIndex = hookmetamethod(game, "__index", newcclosure(function(self, key)
+                if not checkcaller() and Config.SilentAimEnabled and (key == "Hit" or key == "hit") then
+                    if math.random(1, 100) <= (Config.SilentHitChance or 100) then
+                        local tPart = getTargetClosestToMouse(Config.SilentPart, Config.MaxVisualDistance, Config.SilentFOV, Config.SilentWallCheck)
+                        if tPart then
+                            local predPos = tPart.Position + (tPart.AssemblyLinearVelocity * (Config.SilentPrediction or 0.08))
+                            return CFrame.new(predPos)
+                        end
+                    end
                 end
-            end
+                if not checkcaller() and Config.SilentAimEnabled and (key == "Target" or key == "target") then
+                    local tPart = getTargetClosestToMouse(Config.SilentPart, Config.MaxVisualDistance, Config.SilentFOV, Config.SilentWallCheck)
+                    if tPart then
+                        return tPart
+                    end
+                end
+                return oldIndex(self, key)
+            end))
         end
-        if not checkcaller() and Config.SilentAimEnabled and (key == "Target" or key == "target") then
-            local tPart = getTargetClosestToMouse(Config.SilentPart, Config.MaxVisualDistance, Config.SilentFOV, Config.SilentWallCheck)
-            if tPart then
-                return tPart
-            end
-        end
-        return oldIndex(self, key)
     end)
 end
 
