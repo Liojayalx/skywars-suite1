@@ -7935,12 +7935,6 @@ safeConnect(RunService.Heartbeat, function(dt)
         return
     end
 
-    -- Dedicated high-speed bow engine handles bow auto-shooting separately
-    if string.find(string.lower(tool.Name), "bow") then
-        clickAccumulator = 0
-        return
-    end
-
     if Config.HoldToClick and not isMouseDown then
         clickAccumulator = 0
         return
@@ -7974,7 +7968,7 @@ end)
 safeSpawn(function()
     while isSuiteActive do
         local tool = getEquippedTool()
-        if isMouseDown and tool and string.find(string.lower(tool.Name), "bow") and isMatchActive() and IsLocalAlive() then
+        if not Config.ClickerEnabled and isMouseDown and tool and string.find(string.lower(tool.Name), "bow") and isMatchActive() and IsLocalAlive() then
             if Config.BowAutoShoot or Config.HighPingBowEnabled then
                 performClick(tool)
                 task.wait(0.015)
