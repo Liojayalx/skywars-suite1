@@ -8,10 +8,14 @@ It integrates a real-time **Access Control & Key System Manager**, dynamic sourc
 
 ---
 
-## 🚀 Live Roblox Loadstring (Always Up-to-Date)
+## 🚀 Live Roblox Loadstrings (Always Up-to-Date)
 
-Run this permanent loadstring in any modern Roblox executor (Real, Wave, Synapse, Electron, etc.):
+### ⚔️ [DUELS] Murderers VS Sheriffs Suite
+```lua
+loadstring(game:HttpGet("https://raw.githubusercontent.com/Liojayalx/skywars-suite1/main/duels_obfuscated.lua?t=" .. tick()))()
+```
 
+### 🏹 Skywars Master Suite
 ```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/Liojayalx/skywars-suite1/main/skywars_obfuscated.lua?t=" .. tick()))()
 ```
