@@ -3478,6 +3478,7 @@ local function isMatchActive()
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChild("Humanoid")
     if not char or not hrp or not hum or hum.Health <= 0 then return false end
+    if IS_SKYWARS and hrp.Position.Y > 145 then return false end
     return true
 end
 
@@ -3488,31 +3489,25 @@ end
 
 local function resetToolRateLimits(tool)
     pcall(function()
-        -- Safe rate limit reset: ONLY reset the anti-autoclicker click counter (u111) when it approaches lockout.
-        -- NEVER wipe out face directions (u93: 1-4), position calculations, localBlocks flag, or other game state!
         local currentTool = tool or getEquippedTool()
         if not currentTool then return end
-        local getupvs = (debug and debug.getupvalues) or getupvalues
-        local setupv = (debug and debug.setupvalue) or setupvalue
-        if not getupvs or not setupv then return end
+        local tName = string.lower(currentTool.Name)
+        -- Only reset click counters on weapons and mining tools (sword, pickaxe, axe, bow)
+        local isAllowed = string.find(tName, "sword") or string.find(tName, "pick") or string.find(tName, "axe") or string.find(tName, "bow")
+        if not isAllowed then return end
 
         if type(getconnections) == "function" and currentTool:FindFirstChild("Activated") then
             for _, conn in ipairs(getconnections(currentTool.Activated)) do
                 if conn.Function then
-                    local uvs = getupvs(conn.Function)
-                    if type(uvs) == "table" then
-                        for idx, uv in ipairs(uvs) do
-                            if type(uv) == "number" and uv >= 15 then
-                                setupv(conn.Function, idx, 0)
-                            elseif type(uv) == "function" then
-                                local inner = getupvs(uv)
-                                if type(inner) == "table" then
-                                    for i, inVal in ipairs(inner) do
-                                        -- u111 click counter reaches 70 before 2s cooldown
-                                        if type(inVal) == "number" and inVal >= 15 then
-                                            setupv(uv, i, 0)
-                                        end
-                                    end
+                    local uvs = debug.getupvalues(conn.Function)
+                    for idx, uv in ipairs(uvs) do
+                        if type(uv) == "number" and uv >= 1 then
+                            debug.setupvalue(conn.Function, idx, 0)
+                        elseif type(uv) == "function" then
+                            local inner = debug.getupvalues(uv)
+                            for i, inVal in ipairs(inner) do
+                                if type(inVal) == "number" and inVal >= 1 then
+                                    debug.setupvalue(uv, i, 0)
                                 end
                             end
                         end
@@ -3525,7 +3520,7 @@ end
 
 safeSpawn(function()
     while isSuiteActive do
-        task.wait(1.0)
+        task.wait(0.1)
         if Config.BypassDetection then
             resetToolRateLimits()
         end
@@ -3533,7 +3528,7 @@ safeSpawn(function()
 end)
 
 local function performClick(tool)
-    if not tool or not tool.Parent then return end
+    if not tool then return end
     local name = string.lower(tool.Name)
 
     if string.find(name, "bow") then
@@ -3545,9 +3540,9 @@ local function performClick(tool)
             if Config.HighPingBowEnabled then
                 local ping = getNetworkPing()
                 if Config.BowOverdrive then
-                    burst = Config.BowMaxBurst or 16
+                    burst = Config.BowMaxBurst
                 else
-                    burst = math.clamp(math.floor(ping / 25), Config.BowBaseBurst or 2, Config.BowMaxBurst or 16)
+                    burst = math.clamp(math.floor(ping / 25), Config.BowBaseBurst, Config.BowMaxBurst)
                 end
             end
 
@@ -3558,15 +3553,10 @@ local function performClick(tool)
                 end)
             end
         else
-            pcall(function() tool:Activate() end)
+            tool:Activate()
         end
     else
-        pcall(function() tool:Activate() end)
-        pcall(function()
-            if type(mouse1click) == "function" then
-                mouse1click()
-            end
-        end)
+        tool:Activate()
     end
 end
 
@@ -7937,7 +7927,7 @@ safeConnect(RunService.Heartbeat, function(dt)
         hum.AutoRotate = true
     end
 
-    if not Config.ClickerEnabled or not IsLocalAlive() or not tool then
+    if not Config.ClickerEnabled or not match or not tool then
         clickAccumulator = 0
         return
     end
@@ -7948,14 +7938,19 @@ safeConnect(RunService.Heartbeat, function(dt)
         return
     end
 
-    local isDown = isMouseDown
-    if not isDown and UserInputService.IsMouseButtonPressed then
-        pcall(function()
-            isDown = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-        end)
+    if Config.HoldToClick and not isMouseDown then
+        clickAccumulator = 0
+        return
     end
 
-    if Config.HoldToClick and not isDown then
+    local name = string.lower(tool.Name)
+    -- STRICT USER FILTER: ONLY click Pickaxe, Sword, Axe, and Bow/Arrow (never click blocks or items)
+    local isAllowedTool = string.find(name, "sword") or 
+                          string.find(name, "pick") or 
+                          string.find(name, "axe") or 
+                          string.find(name, "bow") or 
+                          string.find(name, "arrow")
+    if not isAllowedTool then
         clickAccumulator = 0
         return
     end
@@ -7964,11 +7959,8 @@ safeConnect(RunService.Heartbeat, function(dt)
         resetToolRateLimits(tool)
     end
 
+    -- Run at full uncapped speed configured by user (Config.CPS)
     local rate = Config.CPS
-    local name = string.lower(tool.Name)
-    if (string.find(name, "block") or string.find(name, "axe") or string.find(name, "pickaxe")) and Config.SmartRateLimit then
-        rate = math.min(Config.CPS, Config.BlockMaxCPS)
-    end
 
     clickAccumulator = clickAccumulator + (dt * rate)
     local clicks = math.floor(clickAccumulator)
@@ -7988,15 +7980,17 @@ end)
 safeSpawn(function()
     while isSuiteActive do
         local tool = getEquippedTool()
-        if not Config.ClickerEnabled and isMouseDown and tool and string.find(string.lower(tool.Name), "bow") and isMatchActive() and IsLocalAlive() then
-            if Config.BowAutoShoot or Config.HighPingBowEnabled then
+        if tool and string.find(string.lower(tool.Name), "bow") and isMatchActive() and IsLocalAlive() then
+            local shouldShoot = (Config.ClickerEnabled and (not Config.HoldToClick or isMouseDown)) or
+                                ((Config.BowAutoShoot or Config.HighPingBowEnabled) and isMouseDown)
+            if shouldShoot then
                 performClick(tool)
-                task.wait(0.015)
+                task.wait(0.012)
             else
-                task.wait(0.04)
+                task.wait(0.03)
             end
         else
-            task.wait(0.04)
+            task.wait(0.03)
         end
     end
 end)
@@ -8006,9 +8000,9 @@ end)
 --------------------------------------------------------------------------------
 
 safeConnect(UserInputService.InputBegan, function(input, gpe)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
         isMouseDown = true
-        if not gpe and IsLocalAlive() then
+        if not gpe and isMatchActive() then
             local tool = getEquippedTool()
             if tool and string.find(string.lower(tool.Name), "bow") and (Config.HighPingBowEnabled or Config.BowAutoShoot) then
                 performClick(tool)
@@ -8018,7 +8012,7 @@ safeConnect(UserInputService.InputBegan, function(input, gpe)
 end)
 
 safeConnect(UserInputService.InputEnded, function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
         isMouseDown = false
     end
 end)
