@@ -3492,21 +3492,21 @@ local function resetToolRateLimits(tool)
         local currentTool = tool or getEquippedTool()
         if not currentTool then return end
         local tName = string.lower(currentTool.Name)
-        -- Only reset click counters on weapons and mining tools (sword, pickaxe, axe, bow)
-        local isAllowed = string.find(tName, "sword") or string.find(tName, "pick") or string.find(tName, "axe") or string.find(tName, "bow")
-        if not isAllowed then return end
+        local isWeapon = string.find(tName, "sword") or string.find(tName, "pick") or string.find(tName, "axe") or string.find(tName, "bow")
+        local isBlock = string.find(tName, "block") or (currentTool:FindFirstChild("RemoteFunction") ~= nil)
+        if not isWeapon and not isBlock then return end
 
         if type(getconnections) == "function" and currentTool:FindFirstChild("Activated") then
             for _, conn in ipairs(getconnections(currentTool.Activated)) do
                 if conn.Function then
                     local uvs = debug.getupvalues(conn.Function)
                     for idx, uv in ipairs(uvs) do
-                        if type(uv) == "number" and uv >= 1 then
+                        if type(uv) == "number" and ((isWeapon and uv >= 1) or (isBlock and uv >= 15)) then
                             debug.setupvalue(conn.Function, idx, 0)
                         elseif type(uv) == "function" then
                             local inner = debug.getupvalues(uv)
                             for i, inVal in ipairs(inner) do
-                                if type(inVal) == "number" and inVal >= 1 then
+                                if type(inVal) == "number" and ((isWeapon and inVal >= 1) or (isBlock and inVal >= 15)) then
                                     debug.setupvalue(uv, i, 0)
                                 end
                             end
@@ -7944,12 +7944,14 @@ safeConnect(RunService.Heartbeat, function(dt)
     end
 
     local name = string.lower(tool.Name)
-    -- STRICT USER FILTER: ONLY click Pickaxe, Sword, Axe, and Bow/Arrow (never click blocks or items)
+    -- Allowed tools: Pickaxe, Sword, Axe, Bow/Arrow, and Blocks
     local isAllowedTool = string.find(name, "sword") or 
                           string.find(name, "pick") or 
                           string.find(name, "axe") or 
                           string.find(name, "bow") or 
-                          string.find(name, "arrow")
+                          string.find(name, "arrow") or 
+                          string.find(name, "block") or 
+                          (tool:FindFirstChild("RemoteFunction") ~= nil)
     if not isAllowedTool then
         clickAccumulator = 0
         return
