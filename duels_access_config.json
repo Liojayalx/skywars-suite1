@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "killSwitchArmed": false,
-  "killSwitchReason": "⚠️ Duels Suite is temporarily offline for emergency maintenance.",
+  "killSwitchReason": "🛡️ Duels Suite is temporarily offline for emergency maintenance.",
   "whitelisted": [
     "724e72411",
     "Synitzynnx",
@@ -10,13 +10,14 @@
     "zwooombiiee",
     "pandasweetgirl15",
     "Amazingskywarssigma2",
-    "eremCR10"
+    "eremCR10",
+    "only_ja88"
   ],
   "banned": [],
   "key": "DORKSTHATAINTWHITELISTED",
   "whitelistSkipsKey": true,
   "whitelistOnlyMode": false,
   "kickOnFail": true,
-  "notifications": true
+  "notifications": true,
+  "lastUpdated": "2026-11-04T03:50:00.000Z"
 }
-
