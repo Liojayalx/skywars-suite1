@@ -24,7 +24,35 @@ local __SUITE_PASSED = false
         "pandasweetgirl15",
         "Amazingskywarssigma2",
         "eremCR10",
+        "only_ja88",
     }
+    local function SafeParentGui(gui)
+        if not gui then return nil end
+        local candidates = {}
+        if type(gethui) == "function" then
+            local ok, h = pcall(gethui)
+            if ok and h and typeof(h) == "Instance" then
+                local inGame = false
+                pcall(function() inGame = h:IsDescendantOf(game) end)
+                if inGame then table.insert(candidates, h) end
+            end
+        end
+        local cg = game:GetService("CoreGui")
+        if cg then table.insert(candidates, cg) end
+        local lp_ = game:GetService("Players").LocalPlayer
+        local pg_ = lp_ and (lp_:FindFirstChildOfClass("PlayerGui") or lp_:FindFirstChild("PlayerGui"))
+        if pg_ then table.insert(candidates, pg_) end
+
+        for _, c in ipairs(candidates) do
+            local ok = pcall(function() gui.Parent = c end)
+            if ok and gui.Parent == c then return c end
+        end
+        if pg_ then
+            pcall(function() gui.Parent = pg_ end)
+            if gui.Parent == pg_ then return pg_ end
+        end
+        return nil
+    end
     local WHITELIST_SKIPS_KEY   = true   -- whitelisted users don't need to type the key
     local WHITELIST_ONLY_MODE   = false  -- true = ONLY whitelisted users can run the script at all
     local KICK_ON_FAIL          = true   -- true = kick from server if key is cancelled / failed / unwhitelisted
@@ -173,8 +201,12 @@ local __SUITE_PASSED = false
     local function showInGameBanner(titleText, descText, isSuccess)
         pcall(function()
             local targetHui = (type(gethui) == "function" and gethui()) or game:GetService("CoreGui")
-            for _, c in ipairs(targetHui:GetChildren()) do
-                if c.Name == "DALX_AccessBanner" then pcall(function() c:Destroy() end) end
+            if targetHui then
+                pcall(function()
+                    for _, c in ipairs(targetHui:GetChildren()) do
+                        if c.Name == "DALX_AccessBanner" then pcall(function() c:Destroy() end) end
+                    end
+                end)
             end
 
             local notifGui = Instance.new("ScreenGui")
@@ -213,7 +245,7 @@ local __SUITE_PASSED = false
             d.TextColor3 = Color3.fromRGB(220, 230, 245)
             d.TextSize = 12
 
-            notifGui.Parent = targetHui
+            SafeParentGui(notifGui)
 
             pcall(function()
                 f:TweenPosition(UDim2.new(0.5, -180, 0, 22), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.45, true)
@@ -261,8 +293,10 @@ local __SUITE_PASSED = false
     task.spawn(function()
         local snoopers = { "simplespy", "hydroxs", "remotespy", "darkdex", "rspy" }
         local function scanCore()
-            local targetHui = (type(gethui) == "function" and gethui()) or game:GetService("CoreGui")
-            for _, obj in ipairs(targetHui:GetChildren()) do
+            pcall(function()
+                local targetHui = (type(gethui) == "function" and gethui()) or game:GetService("CoreGui")
+                if not targetHui then return end
+                for _, obj in ipairs(targetHui:GetChildren()) do
                 local n = obj.Name:lower()
                 for _, s in ipairs(snoopers) do
                     if n:find(s) then
@@ -278,6 +312,7 @@ local __SUITE_PASSED = false
                     end
                 end
             end
+            end)
             return false
         end
         task.wait(1.5)
@@ -513,8 +548,7 @@ local __SUITE_PASSED = false
             passed = false
         end)
 
-        pcall(function() gui.Parent = parentGui end)
-        if not gui.Parent then gui.Parent = CoreGui_ end
+        SafeParentGui(gui)
 
         local elapsed = 0
         while not passed and not closed and elapsed < 60 do
@@ -557,7 +591,19 @@ do
     def("newcclosure", function(f) return f end)
     def("checkcaller", function() return false end)
     def("getcallingscript", function() return nil end)
-    def("gethui", function() return game:GetService("CoreGui") end)
+    def("gethui", function()
+        local cg = game:GetService("CoreGui")
+        local ok = pcall(function()
+            local t = Instance.new("Folder")
+            t.Parent = cg
+            t:Destroy()
+        end)
+        if ok then return cg end
+        local lp = game:GetService("Players").LocalPlayer
+        local pg = lp and (lp:FindFirstChildOfClass("PlayerGui") or lp:FindFirstChild("PlayerGui"))
+        if pg then return pg end
+        return cg
+    end)
     def("setclipboard", function() end)
     def("queue_on_teleport", function() end)
     def("isfile", function() return false end)
@@ -605,26 +651,26 @@ if _G.SkywarsSuiteCleanup then
     end
 end
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
-local CoreGui = game:GetService("CoreGui")
-local Stats = game:GetService("Stats")
-local GuiService = game:GetService("GuiService")
-local HttpService = game:GetService("HttpService")
-local TweenService = game:GetService("TweenService")
-local TeleportService = game:GetService("TeleportService")
-local ContextActionService = game:GetService("ContextActionService")
+Players = game:GetService("Players")
+RunService = game:GetService("RunService")
+UserInputService = game:GetService("UserInputService")
+Workspace = game:GetService("Workspace")
+Lighting = game:GetService("Lighting")
+CoreGui = game:GetService("CoreGui")
+Stats = game:GetService("Stats")
+GuiService = game:GetService("GuiService")
+HttpService = game:GetService("HttpService")
+TweenService = game:GetService("TweenService")
+TeleportService = game:GetService("TeleportService")
+ContextActionService = game:GetService("ContextActionService")
 
-local LocalPlayer = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
+LocalPlayer = Players.LocalPlayer
+Camera = Workspace.CurrentCamera
 local IS_SKYWARS = (game.PlaceId == 855499080)
 
 local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
 
-local function rejoinGame()
+function rejoinGame()
     if #Players:GetPlayers() <= 1 then
         LocalPlayer:Kick("\n[Infinite Yield] Rejoining server...")
         task.wait()
@@ -937,7 +983,7 @@ local RegisteredControls = {
     Keybinds = {}
 }
 
-local function serializeKeybind(keyInput)
+function serializeKeybind(keyInput)
     if not keyInput then return nil end
     if typeof(keyInput) == "EnumItem" then
         if keyInput.EnumType == Enum.KeyCode then
@@ -949,7 +995,7 @@ local function serializeKeybind(keyInput)
     return nil
 end
 
-local function deserializeKeybind(str)
+function deserializeKeybind(str)
     if not str or type(str) ~= "string" then return nil end
     local enumType, enumName = str:match("^([^:]+):([^:]+)$")
     if enumType == "KeyCode" and Enum.KeyCode[enumName] then
@@ -960,14 +1006,14 @@ local function deserializeKeybind(str)
     return nil
 end
 
-local function serializeColor3(c)
+function serializeColor3(c)
     if typeof(c) == "Color3" then
         return {r = math.floor(c.R * 255), g = math.floor(c.G * 255), b = math.floor(c.B * 255)}
     end
     return nil
 end
 
-local function deserializeColor3(t)
+function deserializeColor3(t)
     if type(t) == "table" and t.r and t.g and t.b then
         return Color3.fromRGB(t.r, t.g, t.b)
     end
@@ -988,7 +1034,7 @@ local DANGEROUS_OR_EPHEMERAL_OPTIONS = {
     FlyEnabled = true,
 }
 
-local function serializeConfig()
+function serializeConfig()
     local data = {
         UserId = LocalPlayer.UserId,
         Username = LocalPlayer.Name,
@@ -1025,7 +1071,7 @@ local function serializeConfig()
     return data
 end
 
-local function savePlayerConfig()
+function savePlayerConfig()
     pcall(function()
         if type(writefile) ~= "function" then return end
         if type(isfolder) == "function" and not isfolder(CONFIG_FOLDER) then
@@ -1038,7 +1084,7 @@ local function savePlayerConfig()
 end
 
 local saveDebounceThread = nil
-local function saveConfigDebounced()
+function saveConfigDebounced()
     if saveDebounceThread then
         pcall(function() task.cancel(saveDebounceThread) end)
         saveDebounceThread = nil
@@ -1048,7 +1094,7 @@ local function saveConfigDebounced()
     end)
 end
 
-local function loadPlayerConfig()
+function loadPlayerConfig()
     local loaded = false
     pcall(function()
         if type(readfile) ~= "function" or type(isfile) ~= "function" then return end
@@ -1083,7 +1129,7 @@ local function loadPlayerConfig()
     return loaded
 end
 
-local function applyConfigToUI()
+function applyConfigToUI()
     for id, toggle in pairs(RegisteredControls.Toggles) do
         local cKey = ConfigKeyAliases[id] or id
         if Config[cKey] ~= nil and toggle.UpdateState then
@@ -1138,29 +1184,29 @@ local connections = {}
 local isSuiteActive = true
 local backgroundThreads = {}
 
-local function safeSpawn(fn)
+function safeSpawn(fn)
     local th = task.spawn(fn)
     table.insert(backgroundThreads, th)
     return th
 end
 
-local function safeConnect(signal, fn)
+function safeConnect(signal, fn)
     local conn = signal:Connect(fn)
     table.insert(connections, conn)
     return conn
 end
 
-local function getRoot(char)
+function getRoot(char)
     return char and (char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso"))
 end
 
-local function IsLocalAlive()
+function IsLocalAlive()
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     return char and hum and hum.Health > 0
 end
 
-local function breakVelocity()
+function breakVelocity()
     local char = LocalPlayer.Character
     if char then
         for _, v in ipairs(char:GetDescendants()) do
@@ -1178,7 +1224,7 @@ local function breakVelocity()
     end
 end
 
-local function getPlayerByName(str)
+function getPlayerByName(str)
     if not str or str == "" then return nil end
     local query = string.lower(str)
     for _, p in ipairs(Players:GetPlayers()) do
@@ -1191,7 +1237,7 @@ local function getPlayerByName(str)
     return nil
 end
 
-local function getPlayerNamesList()
+function getPlayerNamesList()
     local list = {}
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then table.insert(list, p.Name) end
@@ -1201,7 +1247,7 @@ local function getPlayerNamesList()
     return list
 end
 
-local function getOtherPlayerNames()
+function getOtherPlayerNames()
     local names = {}
     for _, p in ipairs(Players:GetPlayers()) do
         if p ~= LocalPlayer then table.insert(names, p.Name) end
@@ -1216,7 +1262,7 @@ end
 
 local selectedExcluded = {}
 
-local function isExcluded(player)
+function isExcluded(player)
     if not player or player == LocalPlayer then return true end
     if Config.HitboxTeamCheck and LocalPlayer.Team and player.Team and LocalPlayer.Team == player.Team then
         return true
@@ -1241,7 +1287,7 @@ local KeybindRegistry = {}
 local isListeningForBind = false
 local MineBehindToggleObj = nil
 
-local function getKeyName(keyInput)
+function getKeyName(keyInput)
     if not keyInput then return "None" end
     if typeof(keyInput) == "EnumItem" then
         if keyInput.EnumType == Enum.UserInputType then
@@ -1256,14 +1302,14 @@ local function getKeyName(keyInput)
     return tostring(keyInput)
 end
 
-local function registerKeybindBadge(keybindKey, badgeBtn)
+function registerKeybindBadge(keybindKey, badgeBtn)
     if not RegisteredControls.Keybinds[keybindKey] then
         RegisteredControls.Keybinds[keybindKey] = {}
     end
     table.insert(RegisteredControls.Keybinds[keybindKey], badgeBtn)
 end
 
-local function syncKeybindBadges(keybindKey)
+function syncKeybindBadges(keybindKey)
     local curKey = Config.Keybinds and Config.Keybinds[keybindKey]
     local name = getKeyName(curKey)
     local col = curKey and THEME.TextPrimary or THEME.TextDim
@@ -1287,7 +1333,7 @@ local function syncKeybindBadges(keybindKey)
     end
 end
 
-local function startBindingKey(keybindConfigKey, bindBadge, onFinished)
+function startBindingKey(keybindConfigKey, bindBadge, onFinished)
     if isListeningForBind then return end
     isListeningForBind = true
     bindBadge.Text = "[...]"
@@ -1329,7 +1375,7 @@ local function startBindingKey(keybindConfigKey, bindBadge, onFinished)
     end)
 end
 
-local function triggerOption(key)
+function triggerOption(key)
     if not key then return end
     local toggle = RegisteredControls.Toggles[key]
     if not toggle then
@@ -1360,7 +1406,7 @@ local bridgeAutoPilotActive = false
 local autoPilotMoveDir = Vector3.new(0, 0, -1)
 local lastGodbridgeEndTime = 0
 
-local function toggleBridgeAutoPilot(val)
+function toggleBridgeAutoPilot(val)
     if val == nil then
         val = not bridgeAutoPilotActive
     end
@@ -1477,7 +1523,7 @@ end)
 -- HIGH-PING FAST BOW ENGINE (Adaptive Network Pipelining)
 --------------------------------------------------------------------------------
 
-local function getNetworkPing()
+function getNetworkPing()
     local ping = nil
     pcall(function()
         ping = Stats.Network.ServerStatsItem["Data Ping"]:GetValue()
@@ -1497,7 +1543,7 @@ local currentBowTargetPos = nil
 local hookedBowCC = nil
 local lastBackgroundBowShootTick = 0
 
-local function hookBowClientControl(tool)
+function hookBowClientControl(tool)
     if not tool or not string.find(string.lower(tool.Name), "bow") then return end
     local cc = tool:FindFirstChild("ClientControl")
     if not cc or not cc:IsA("RemoteFunction") or cc == hookedBowCC then return end
@@ -1517,7 +1563,7 @@ local function hookBowClientControl(tool)
     end
 end
 
-local function getAnyBowTool()
+function getAnyBowTool()
     local char = LocalPlayer.Character
     if char then
         for _, t in ipairs(char:GetChildren()) do
@@ -1538,7 +1584,7 @@ local function getAnyBowTool()
 end
 
 local isBackgroundBowFiring = false
-local function shootBowWithoutHolding(targetOverridePos)
+function shootBowWithoutHolding(targetOverridePos)
     if isBackgroundBowFiring then return false end
     local char = LocalPlayer.Character
     if not char or not IsLocalAlive() then return false end
@@ -1672,7 +1718,7 @@ local safeTpSavedCFrame = nil
 local safeTpHeartbeat = nil
 local SafeTPToggleObj = nil
 
-local function toggleSafeTP(state)
+function toggleSafeTP(state)
     Config.SafeTPEnabled = state
     local char = LocalPlayer.Character
     local root = getRoot(char)
@@ -1745,7 +1791,7 @@ end
 
 local ReachCircleParts = {}
 
-local function createReachCircle()
+function createReachCircle()
     for _, part in pairs(ReachCircleParts) do
         if part then part:Destroy() end
     end
@@ -1767,7 +1813,7 @@ local function createReachCircle()
     end
 end
 
-local function updateReachCirclePosition(rootPosition)
+function updateReachCirclePosition(rootPosition)
     if #ReachCircleParts == 0 then return end
     local numParts = #ReachCircleParts
     local angleStep = (math.pi * 2) / numParts
@@ -1784,7 +1830,7 @@ local function updateReachCirclePosition(rootPosition)
     end
 end
 
-local function destroyReachCircle()
+function destroyReachCircle()
     for _, part in pairs(ReachCircleParts) do
         if part then part:Destroy() end
     end
@@ -1796,7 +1842,7 @@ end
 --------------------------------------------------------------------------------
 
 local antiFlingStepped = nil
-local function setAntiFling(state)
+function setAntiFling(state)
     Config.AntiFlingEnabled = state
     if antiFlingStepped then
         antiFlingStepped:Disconnect()
@@ -1837,7 +1883,7 @@ local isPerformingSpin = false
 local lastSpinTick = 0
 local spinRenderConn = nil
 
-local function cleanupSpin(humanoid)
+function cleanupSpin(humanoid)
     if spinRenderConn then
         pcall(function() spinRenderConn:Disconnect() end)
         spinRenderConn = nil
@@ -1850,7 +1896,7 @@ local function cleanupSpin(humanoid)
     isPerformingSpin = false
 end
 
-local function performCharacterSpin()
+function performCharacterSpin()
     local now = os.clock()
     if isPerformingSpin or (now - lastSpinTick < COOLDOWN_SECONDS) then
         return
@@ -1910,7 +1956,7 @@ local function performCharacterSpin()
     end)
 end
 
-local function handleSpinInput(actionName, inputState, _inputObject)
+function handleSpinInput(actionName, inputState, _inputObject)
     if actionName == ACTION_NAME and inputState == Enum.UserInputState.Begin then
         performCharacterSpin()
         return Enum.ContextActionResult.Sink
@@ -1918,7 +1964,7 @@ local function handleSpinInput(actionName, inputState, _inputObject)
     return Enum.ContextActionResult.Pass
 end
 
-local function syncSpinKeybind(targetBind)
+function syncSpinKeybind(targetBind)
     pcall(function() ContextActionService:UnbindAction(ACTION_NAME) end)
     if targetBind and typeof(targetBind) == "EnumItem" and targetBind.EnumType == Enum.KeyCode then
         pcall(function()
@@ -1936,7 +1982,7 @@ end)
 
 local Noclipping = nil
 local noclipOriginalCollide = {}
-local function setNoclip(state)
+function setNoclip(state)
     Config.Noclip = state
     if Noclipping then Noclipping:Disconnect() Noclipping = nil end
 
@@ -1962,7 +2008,7 @@ local function setNoclip(state)
     end
 end
 
-local function giveTpTool()
+function giveTpTool()
     local backpack = LocalPlayer:FindFirstChildOfClass("Backpack")
     if not backpack then return end
     local existing = backpack:FindFirstChild("TP Tool") or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("TP Tool"))
@@ -2004,7 +2050,7 @@ local function giveTpTool()
 end
 
 local flingConnection = nil
-local function setFling(state)
+function setFling(state)
     Config.FlingEnabled = state
     if flingConnection then flingConnection:Disconnect() flingConnection = nil end
     if state then
@@ -2024,7 +2070,7 @@ end
 --------------------------------------------------------------------------------
 
 local ctrlTpConn = nil
-local function toggleCtrlTP(state)
+function toggleCtrlTP(state)
     Config.CtrlTP = state
     if ctrlTpConn then ctrlTpConn:Disconnect() ctrlTpConn = nil end
     if state then
@@ -2042,12 +2088,12 @@ local bangLoop = nil
 local bangAnimTrack = nil
 local carpetLoop = nil
 
-local function stopBang()
+function stopBang()
     if bangLoop then bangLoop:Disconnect() bangLoop = nil end
     if bangAnimTrack then pcall(function() bangAnimTrack:Stop() bangAnimTrack:Destroy() end) bangAnimTrack = nil end
 end
 
-local function startBang(targetPlr)
+function startBang(targetPlr)
     stopBang()
     if not targetPlr or not targetPlr.Character then return end
     local myChar = LocalPlayer.Character
@@ -2078,14 +2124,14 @@ local function startBang(targetPlr)
     end)
 end
 
-local function stopCarpet()
+function stopCarpet()
     if carpetLoop then carpetLoop:Disconnect() carpetLoop = nil end
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum then hum.PlatformStand = false end
 end
 
-local function startCarpet(targetPlr)
+function startCarpet(targetPlr)
     stopCarpet()
     if not targetPlr or not targetPlr.Character then return end
 
@@ -3279,7 +3325,7 @@ end
 
 local hankiCleanerThread = nil
 
-local function initHankiBypass()
+function initHankiBypass()
     if not getgenv().__SkywarsHankiHooked then
         getgenv().__SkywarsHankiHooked = true
         local blacklistSet = { BodyVelocity = true, BodyPosition = true, BodyThrust = true }
@@ -3368,7 +3414,7 @@ initHankiBypass()
 --------------------------------------------------------------------------------
 
 local flyKeyDown, flyKeyUp = nil, nil
-local function NOFLY()
+function NOFLY()
     Config.FlyEnabled = false
     if flyKeyDown then flyKeyDown:Disconnect() flyKeyDown = nil end
     if flyKeyUp then flyKeyUp:Disconnect() flyKeyUp = nil end
@@ -3378,7 +3424,7 @@ local function NOFLY()
     pcall(function() Camera.CameraType = Enum.CameraType.Custom end)
 end
 
-local function sFLY()
+function sFLY()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if not humanoid then repeat task.wait() until char:FindFirstChildOfClass("Humanoid") humanoid = char:FindFirstChildOfClass("Humanoid") end
@@ -3435,12 +3481,12 @@ local function sFLY()
     end)
 end
 
-local function setFlightState(state)
+function setFlightState(state)
     if state then NOFLY() task.wait() sFLY() else NOFLY() end
 end
 
 local infJumpConn = nil
-local function setInfiniteJump(state)
+function setInfiniteJump(state)
     Config.InfiniteJump = state
     if infJumpConn then infJumpConn:Disconnect() infJumpConn = nil end
     if state then
@@ -3479,7 +3525,7 @@ end)
 local isMouseDown = false
 local clickAccumulator = 0
 
-local function isMatchActive()
+function isMatchActive()
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChild("Humanoid")
@@ -3488,12 +3534,12 @@ local function isMatchActive()
     return true
 end
 
-local function getEquippedTool()
+function getEquippedTool()
     local char = LocalPlayer.Character
     return char and char:FindFirstChildOfClass("Tool")
 end
 
-local function resetToolRateLimits(tool)
+function resetToolRateLimits(tool)
     pcall(function()
         local currentTool = tool or getEquippedTool()
         if not currentTool then return end
@@ -3533,7 +3579,7 @@ safeSpawn(function()
     end
 end)
 
-local function performClick(tool)
+function performClick(tool)
     if not tool then return end
     local name = string.lower(tool.Name)
 
@@ -3579,7 +3625,7 @@ local FOCUS_CLOSEST_ONLY = true
 directVisualBox = nil
 local oreBoxes = {}
 
-local function getEquippedPickaxe()
+function getEquippedPickaxe()
     local char = LocalPlayer.Character
     if not char then return nil end
     for _, item in ipairs(char:GetChildren()) do
@@ -3593,7 +3639,7 @@ local function getEquippedPickaxe()
     return nil
 end
 
-local function getAnyPickaxeTool()
+function getAnyPickaxeTool()
     local equipped = getEquippedPickaxe()
     if equipped then return equipped end
     local bp = LocalPlayer:FindFirstChildOfClass("Backpack")
@@ -3610,7 +3656,7 @@ local function getAnyPickaxeTool()
     return nil
 end
 
-local function ensurePickaxeEquipped()
+function ensurePickaxeEquipped()
     local tool = getAnyPickaxeTool()
     if not tool then return nil end
     local char = LocalPlayer.Character
@@ -3621,7 +3667,7 @@ local function ensurePickaxeEquipped()
     return tool
 end
 
-local function getAnyPickaxeRemote()
+function getAnyPickaxeRemote()
     local tool = getAnyPickaxeTool()
     if tool then
         return tool:FindFirstChildWhichIsA("RemoteEvent")
@@ -3629,7 +3675,7 @@ local function getAnyPickaxeRemote()
     return nil
 end
 
-local function getOresFolder()
+function getOresFolder()
     for _, v in pairs(Workspace:GetChildren()) do
         if v.Name:match("Map") then
             local map = v:FindFirstChild("Map")
@@ -3642,7 +3688,7 @@ local function getOresFolder()
     return nil
 end
 
-local function addOreBox(block)
+function addOreBox(block)
     if oreBoxes[block] or not block or not block.Parent then return end
     local box = Instance.new("BoxHandleAdornment")
     box.Adornee = block
@@ -3655,7 +3701,7 @@ local function addOreBox(block)
     oreBoxes[block] = box
 end
 
-local function removeOreBox(block)
+function removeOreBox(block)
     if oreBoxes[block] then
         pcall(function() oreBoxes[block]:Destroy() end)
         oreBoxes[block] = nil
@@ -3815,11 +3861,11 @@ local pendingPlacements = {}
 local lastPlaceTick = 0
 local lastMineTick = 0
 
-local function getVoxelKey(pos)
+function getVoxelKey(pos)
     return string.format("%d,%d,%d", math.round(pos.X / 4) * 4, math.round(pos.Y / 4) * 4, math.round(pos.Z / 4) * 4)
 end
 
-local function getAnyBlockTool()
+function getAnyBlockTool()
     local char = LocalPlayer.Character
     if char then
         for _, item in ipairs(char:GetChildren()) do
@@ -3839,7 +3885,7 @@ local function getAnyBlockTool()
     return nil
 end
 
-local function ensureBlockEquipped()
+function ensureBlockEquipped()
     local tool = getAnyBlockTool()
     if not tool then return nil end
     local char = LocalPlayer.Character
@@ -3851,7 +3897,7 @@ local function ensureBlockEquipped()
 end
 
 
-local function findBlockAt(pos)
+function findBlockAt(pos)
     local op = OverlapParams.new()
     op.FilterType = Enum.RaycastFilterType.Include
     local filter = {}
@@ -3872,7 +3918,7 @@ local function findBlockAt(pos)
     return nil
 end
 
-local function isSolidBlockAt(pos)
+function isSolidBlockAt(pos)
     local key = getVoxelKey(pos)
     if pendingPlacements[key] and (tick() - pendingPlacements[key] < 0.2) then
         return true, nil
@@ -3885,7 +3931,7 @@ local function isSolidBlockAt(pos)
     return false, nil
 end
 
-local function getCurrentPlayerSpeed()
+function getCurrentPlayerSpeed()
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -3903,7 +3949,7 @@ end
 local bridgeHistory = {}
 local bridgeHistorySet = {}
 
-local function trackBridgeBlock(pos)
+function trackBridgeBlock(pos)
     if not pos then return end
     local key = getVoxelKey(pos)
     if not bridgeHistorySet[key] then
@@ -3912,7 +3958,7 @@ local function trackBridgeBlock(pos)
     end
 end
 
-local function executeBlockPlace(targetPos, isEmergency, isRunway)
+function executeBlockPlace(targetPos, isEmergency, isRunway)
     local key = getVoxelKey(targetPos)
     local dedupeTtl = (isEmergency or isRunway) and 0.35 or 0.2
     if pendingPlacements[key] and (tick() - pendingPlacements[key] < dedupeTtl) then
@@ -3993,7 +4039,7 @@ local function executeBlockPlace(targetPos, isEmergency, isRunway)
     return ok
 end
 
-local function executeMineBlock(blockPart, forceImmediate)
+function executeMineBlock(blockPart, forceImmediate)
     if not (blockPart and blockPart.Parent) then return false end
 
     local currentSpeed = getCurrentPlayerSpeed()
@@ -4026,7 +4072,7 @@ local function executeMineBlock(blockPart, forceImmediate)
     return true
 end
 
-local function executeFrontTunnelMine(currentPosUnder, dirX, dirZ, floorY)
+function executeFrontTunnelMine(currentPosUnder, dirX, dirZ, floorY)
     if not Config.BridgeTunnel3x3 then return false end
 
     local pickTool = ensurePickaxeEquipped() or getAnyPickaxeTool()
@@ -4331,7 +4377,7 @@ end)
 -- COMBAT TARGET FINDER
 --------------------------------------------------------------------------------
 
-local function getClosestCombatTarget()
+function getClosestCombatTarget()
     local char = LocalPlayer.Character
     local root = getRoot(char)
     if not root or (IS_SKYWARS and root.Position.Y > 145) then return nil end
@@ -4363,13 +4409,13 @@ end
 --------------------------------------------------------------------------------
 
 local ORIGINAL_SIZE = Vector3.new(2, 2, 1)
-local function resetHitbox(character)
+function resetHitbox(character)
     if not character then return end
     local hrp = character:FindFirstChild("HumanoidRootPart")
     if hrp then hrp.Size = ORIGINAL_SIZE hrp.Transparency = 1 hrp.CanCollide = false end
 end
 
-local function resetAllHitboxes()
+function resetAllHitboxes()
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character then resetHitbox(player.Character) end
     end
@@ -4380,7 +4426,7 @@ end
 --------------------------------------------------------------------------------
 
 local TrackedEntities = {}
-local function removeTracker(player)
+function removeTracker(player)
     local d = TrackedEntities[player]
     if d then
         if d.Highlight then pcall(function() d.Highlight:Destroy() end) end
@@ -4390,7 +4436,7 @@ local function removeTracker(player)
     end
 end
 
-local function getOrCreateTracker(player)
+function getOrCreateTracker(player)
     if TrackedEntities[player] then return TrackedEntities[player] end
     local d = {}
     
@@ -4430,7 +4476,7 @@ local function getOrCreateTracker(player)
     return d
 end
 
-local function hideAllVisuals()
+function hideAllVisuals()
     for _, d in pairs(TrackedEntities) do
         if d.Highlight then d.Highlight.Enabled = false end
         if d.Billboard then d.Billboard.Enabled = false end
@@ -4439,7 +4485,7 @@ local function hideAllVisuals()
     if selfHighlight then selfHighlight.Enabled = false end
 end
 
-local function destroyAllVisuals()
+function destroyAllVisuals()
     for _, d in pairs(TrackedEntities) do
         if d.Highlight then pcall(function() d.Highlight:Destroy() end) end
         if d.Billboard then pcall(function() d.Billboard:Destroy() end) end
@@ -4461,7 +4507,7 @@ local VisualPresets = {
     ["Blood Red"] = Color3.fromRGB(255, 45, 45),
 }
 
-local function getCurrentVisualColor(healthRatio)
+function getCurrentVisualColor(healthRatio)
     if Config.RainbowChroma then
         return Color3.fromHSV((tick() * 0.4) % 1, 0.85, 1)
     end
@@ -4478,7 +4524,7 @@ local function getCurrentVisualColor(healthRatio)
 end
 
 local selfHighlight = nil
-local function updateSelfHighlight()
+function updateSelfHighlight()
     local char = LocalPlayer.Character
     if not char then return end
     if Config.SelfChamsEnabled then
@@ -4503,7 +4549,7 @@ local function updateSelfHighlight()
 end
 
 local originalLighting = nil
-local function applyFullbright(enabled)
+function applyFullbright(enabled)
     Config.FullbrightEnabled = enabled
     if not originalLighting then
         originalLighting = {
@@ -4536,7 +4582,7 @@ local function applyFullbright(enabled)
     end
 end
 
-local function applyMinecraftGraphics(enabled)
+function applyMinecraftGraphics(enabled)
     if not originalLighting then
         originalLighting = {
             Brightness = Lighting.Brightness,
@@ -4590,7 +4636,7 @@ local function applyMinecraftGraphics(enabled)
     Lighting.GlobalShadows = true
 end
 
-local function applyAtmosphereTheme(theme)
+function applyAtmosphereTheme(theme)
     Config.AtmosphereTheme = theme
     if not originalLighting then
         originalLighting = {
@@ -4645,7 +4691,7 @@ end
 --------------------------------------------------------------------------------
 
 local lastProximityAlertTick = 0
-local function playSound(soundId, volume)
+function playSound(soundId, volume)
     if not Config.SoundFXEnabled then return end
     pcall(function()
         local s = Instance.new("Sound")
@@ -4666,7 +4712,7 @@ end)
 -- RADAR & THREAT SCANNER HELPER FUNCTIONS
 --------------------------------------------------------------------------------
 
-local function scanPlayerArmor(plr)
+function scanPlayerArmor(plr)
     if not plr or not plr.Character then return "None" end
     local armorFound = {}
     for _, child in ipairs(plr.Character:GetChildren()) do
@@ -4689,7 +4735,7 @@ local function scanPlayerArmor(plr)
     return "Leather / Standard"
 end
 
-local function scanPlayerWeapon(plr)
+function scanPlayerWeapon(plr)
     if not plr or not plr.Character then return "None" end
     local tool = plr.Character:FindFirstChildOfClass("Tool")
     if tool then return tool.Name end
@@ -4704,7 +4750,7 @@ local function scanPlayerWeapon(plr)
     return "Unarmed / Fists"
 end
 
-local function getClosestEnemyInfo()
+function getClosestEnemyInfo()
     local char = LocalPlayer.Character
     local root = getRoot(char)
     if not root then return nil, 0 end
@@ -4734,15 +4780,62 @@ local watermarkGui = nil
 local watermarkFrame = nil
 local watermarkFpsConn = nil
 
-local function getGuiParent()
-    local target = (type(gethui) == "function" and gethui()) or CoreGui
-    if not target or target == CoreGui then
-        local lp = Players.LocalPlayer
-        if lp and lp:FindFirstChild("PlayerGui") then
-            return lp.PlayerGui
+function getGuiParent()
+    if type(gethui) == "function" then
+        local ok, res = pcall(gethui)
+        if ok and res and typeof(res) == "Instance" then
+            local inGame = false
+            pcall(function() inGame = res:IsDescendantOf(game) end)
+            if inGame then
+                local test = Instance.new("Folder")
+                local canParent = pcall(function() test.Parent = res end)
+                pcall(function() test:Destroy() end)
+                if canParent then return res end
+            end
         end
     end
-    return target
+    if CoreGui then
+        local test = Instance.new("Folder")
+        local canParent = pcall(function() test.Parent = CoreGui end)
+        pcall(function() test:Destroy() end)
+        if canParent then return CoreGui end
+    end
+    local lp = Players.LocalPlayer
+    local pg = lp and (lp:FindFirstChildOfClass("PlayerGui") or lp:WaitForChild("PlayerGui", 5))
+    if pg then return pg end
+    return CoreGui
+end
+
+function safeParentGui(gui)
+    if not gui then return nil end
+    local candidates = {}
+    if type(gethui) == "function" then
+        local ok, h = pcall(gethui)
+        if ok and h and typeof(h) == "Instance" then
+            local inGame = false
+            pcall(function() inGame = h:IsDescendantOf(game) end)
+            if inGame then table.insert(candidates, h) end
+        end
+    end
+    if CoreGui then
+        table.insert(candidates, CoreGui)
+    end
+    local lp = Players.LocalPlayer or game:GetService("Players").LocalPlayer
+    local pg = lp and (lp:FindFirstChildOfClass("PlayerGui") or lp:FindFirstChild("PlayerGui"))
+    if pg then
+        table.insert(candidates, pg)
+    end
+    for _, c in ipairs(candidates) do
+        local ok = pcall(function() gui.Parent = c end)
+        if ok and gui.Parent == c then
+            return c
+        end
+    end
+    if pg then
+        pcall(function() gui.Parent = pg end)
+        if gui.Parent == pg then return pg end
+    end
+    return nil
 end
 
 pcall(function()
@@ -4754,7 +4847,7 @@ pcall(function()
     end
 end)
 
-local function createWatermarkHUD()
+function createWatermarkHUD()
     local targetHui = getGuiParent()
     for _, c in ipairs(targetHui:GetChildren()) do
         if c.Name == "DALX_WatermarkHUD" then pcall(function() c:Destroy() end) end
@@ -4818,7 +4911,7 @@ local function createWatermarkHUD()
         end
     end)
 
-    pcall(function() watermarkGui.Parent = targetHui end)
+    safeParentGui(watermarkGui)
 end
 createWatermarkHUD()
 
@@ -4830,7 +4923,7 @@ local keybindIndicatorGui = nil
 local keybindIndicatorFrame = nil
 local keybindListContainer = nil
 
-local function updateKeybindIndicatorHUD()
+function updateKeybindIndicatorHUD()
     -- Keybind indicator HUD removed per user request
 end
 
@@ -4989,7 +5082,17 @@ function DalxUI:CreateWindow(winConfig)
     notifyLayout.Padding = UDim.new(0, 6)
     self.NotifyContainer = notifyContainer
 
-    pcall(function() screenGui.Parent = targetHui end)
+    local parented = safeParentGui(screenGui)
+    if not parented then
+        warn("[DALX UI] Safe parenting failed. Forcing PlayerGui.")
+        pcall(function()
+            local lp = Players.LocalPlayer or game:GetService("Players").LocalPlayer
+            local pg = lp and (lp:FindFirstChildOfClass("PlayerGui") or lp:WaitForChild("PlayerGui", 5))
+            if pg then screenGui.Parent = pg end
+        end)
+    else
+        print("[DALX UI] Tactical menu parented successfully to: " .. tostring(parented:GetFullName()))
+    end
 
     function self:Toggle(forceState)
         if forceState ~= nil then
@@ -7237,7 +7340,7 @@ countLabel.Text = "Showing " .. tostring(#MASTER_KEYBIND_ITEMS) .. " / " .. tost
 local registeredRowFrames = {}
 local entrySections = {}
 
-local function refreshKeybindFilter()
+function refreshKeybindFilter()
     local visibleCount = 0
     local q = string.lower(string.gsub(activeSearchQuery, "^%s*(.-)%s*$", "%1"))
     clearSearchBtn.Visible = (q ~= "")
@@ -7350,7 +7453,7 @@ table.insert(entrySections, kbMoveSec)
 table.insert(entrySections, kbVisSec)
 table.insert(entrySections, kbIySec)
 
-local function createKeybindRow(sec, item)
+function createKeybindRow(sec, item)
     local box = sec.Box
     local row = Instance.new("Frame", box)
     row.Name = "KBRow_" .. item.Key
@@ -8032,7 +8135,7 @@ safeConnect(UserInputService.InputEnded, function(input)
     end
 end)
 
-local function onCharAdded(char)
+function onCharAdded(char)
     bridgeAutoPilotActive = false
     table.clear(pendingPlacements)
     if Config.FlyEnabled then NOFLY() end
@@ -8092,7 +8195,7 @@ end)
 local aimState = { Mouse = Mouse, Active = true, AimCFrame = nil }
 getgenv().__SkywarsAimState = aimState
 
-local function getSilentTarget()
+function getSilentTarget()
     local mousePos = UserInputService:GetMouseLocation()
     local closest = math.huge
     local bestRoot = nil
@@ -8117,7 +8220,7 @@ local function getSilentTarget()
     return bestRoot
 end
 
-local function bowEquipped()
+function bowEquipped()
     local tool = getEquippedTool()
     return tool ~= nil and string.find(string.lower(tool.Name), "bow") ~= nil
 end
