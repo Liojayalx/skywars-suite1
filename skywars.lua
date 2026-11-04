@@ -24,7 +24,6 @@ local __SUITE_PASSED = false
         "pandasweetgirl15",
         "Amazingskywarssigma2",
         "eremCR10",
-        "only_ja88",
     }
     local WHITELIST_SKIPS_KEY   = true   -- whitelisted users don't need to type the key
     local WHITELIST_ONLY_MODE   = false  -- true = ONLY whitelisted users can run the script at all
@@ -672,12 +671,12 @@ local Config = {
     BypassDetection = true,
     SmartRateLimit = false,
     BlockMaxCPS = 25,
-    -- High-Ping Fast Bow Engine
+    -- High-Ping Fast Bow Engine (Only the bow uses ping acceleration)
     HighPingBowEnabled = true,
     BowAutoShoot = true,
-    BowOverdrive = true,
-    BowBaseBurst = 4,
-    BowMaxBurst = 16,
+    BowOverdrive = false,
+    BowBaseBurst = 3,
+    BowMaxBurst = 6,
     -- Shoot Bow Without Holding
     BackgroundBowEnabled = false,
     BackgroundBowAimMode = "Nearest Enemy",
@@ -873,8 +872,14 @@ local ConfigKeyAliases = {
     ["Smooth Rotation"] = "SmoothRotation",
     ["Rotation Speed"] = "RotationSpeed",
     ["Combat Face Range"] = "CombatFaceRange",
+    ["High-Ping Bow Acceleration"] = "HighPingBowEnabled",
+    ["High-Ping Acceleration"] = "HighPingBowEnabled",
     ["High-Ping Fast Bow"] = "HighPingBowEnabled",
+    ["Bow Latency Overdrive"] = "BowOverdrive",
+    ["Latency Overdrive (Max Burst)"] = "BowOverdrive",
     ["Bow Overdrive Mode"] = "BowOverdrive",
+    ["Bow Burst Multiplier"] = "BowMaxBurst",
+    ["Max Burst Multiplier"] = "BowMaxBurst",
     ["Base Rapid Burst"] = "BowBaseBurst",
     ["Max Velocity Burst"] = "BowMaxBurst",
     ["Enable Flight"] = "FlyEnabled",
@@ -1595,9 +1600,9 @@ local function shootBowWithoutHolding(targetOverridePos)
     if Config.HighPingBowEnabled then
         local ping = getNetworkPing()
         if Config.BowOverdrive then
-            burst = Config.BowMaxBurst or 16
+            burst = math.clamp(Config.BowMaxBurst or 6, 2, 8)
         else
-            burst = math.clamp(math.floor(ping / 25), Config.BowBaseBurst or 2, Config.BowMaxBurst or 16)
+            burst = math.clamp(math.floor(ping / 40), Config.BowBaseBurst or 2, Config.BowMaxBurst or 6)
         end
     end
 
@@ -3541,9 +3546,9 @@ local function performClick(tool)
             if Config.HighPingBowEnabled then
                 local ping = getNetworkPing()
                 if Config.BowOverdrive then
-                    burst = Config.BowMaxBurst
+                    burst = math.clamp(Config.BowMaxBurst or 6, 2, 8)
                 else
-                    burst = math.clamp(math.floor(ping / 25), Config.BowBaseBurst, Config.BowMaxBurst)
+                    burst = math.clamp(math.floor(ping / 40), Config.BowBaseBurst or 2, Config.BowMaxBurst or 6)
                 end
             end
 
@@ -4241,7 +4246,6 @@ safeSpawn(function()
 
                 -- 3. Legit Runway Lookahead: Stride-Synced Placement + Airborne Jump Support
                 local currentSpeed = getCurrentPlayerSpeed()
-                local ping = (getNetworkPing and getNetworkPing()) or 60
 
                 local userBlocksAhead = tonumber(Config.BridgeLookaheadBlocks) or 1
                 -- While jumping, place at least 2 blocks ahead so landing pad is solid before touchdown
@@ -5903,23 +5907,23 @@ combatLeft:Toggle({
 }, "BowAutoShootToggle")
 
 combatLeft:Toggle({
-    Name = "High-Ping Acceleration",
+    Name = "High-Ping Bow Acceleration",
     Default = true,
     Keybind = "FastBow",
     Callback = function(val) Config.HighPingBowEnabled = val end
 }, "FastBowToggle")
 
 combatLeft:Toggle({
-    Name = "Latency Overdrive (Max Burst)",
-    Default = true,
+    Name = "Bow Latency Overdrive",
+    Default = false,
     Callback = function(val) Config.BowOverdrive = val end
 }, "BowOverdriveToggle")
 
 combatLeft:Slider({
-    Name = "Max Burst Multiplier",
-    Default = 16,
+    Name = "Bow Burst Multiplier",
+    Default = 6,
     Minimum = 2,
-    Maximum = 30,
+    Maximum = 12,
     Precision = 0,
     Callback = function(val) Config.BowMaxBurst = val end
 }, "BowMaxBurstSlider")
@@ -7945,12 +7949,16 @@ safeConnect(RunService.Heartbeat, function(dt)
     end
 
     local name = string.lower(tool.Name)
-    -- Allowed tools: Pickaxe, Sword, Axe, Bow/Arrow, Blocks, and Potions (Heal, Speed, Jump)
+    -- Bows have their own dedicated High-Ping engine below; bypass clicker to prevent duplicate burst stacking
+    if string.find(name, "bow") or string.find(name, "arrow") then
+        clickAccumulator = 0
+        return
+    end
+
+    -- Allowed tools: Pickaxe, Sword, Axe, Blocks, and Potions (Heal, Speed, Jump)
     local isAllowedTool = string.find(name, "sword") or 
                           string.find(name, "pick") or 
                           string.find(name, "axe") or 
-                          string.find(name, "bow") or 
-                          string.find(name, "arrow") or 
                           string.find(name, "block") or 
                           string.find(name, "potion") or 
                           string.find(name, "heal") or 
@@ -7992,7 +8000,7 @@ safeSpawn(function()
                                 ((Config.BowAutoShoot or Config.HighPingBowEnabled) and isMouseDown)
             if shouldShoot then
                 performClick(tool)
-                task.wait(0.012)
+                task.wait(0.025)
             else
                 task.wait(0.03)
             end
