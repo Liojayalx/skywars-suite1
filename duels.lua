@@ -24,7 +24,35 @@ do
         "pandasweetgirl15",
         "Amazingskywarssigma2",
         "eremCR10",
+        "only_ja88",
     }
+    local function SafeParentGui(gui)
+        if not gui then return nil end
+        local candidates = {}
+        if type(gethui) == "function" then
+            local ok, h = pcall(gethui)
+            if ok and h and typeof(h) == "Instance" then
+                local inGame = false
+                pcall(function() inGame = h:IsDescendantOf(game) end)
+                if inGame then table.insert(candidates, h) end
+            end
+        end
+        local cg = game:GetService("CoreGui")
+        if cg then table.insert(candidates, cg) end
+        local lp_ = game:GetService("Players").LocalPlayer
+        local pg_ = lp_ and (lp_:FindFirstChildOfClass("PlayerGui") or lp_:FindFirstChild("PlayerGui"))
+        if pg_ then table.insert(candidates, pg_) end
+
+        for _, c in ipairs(candidates) do
+            local ok = pcall(function() gui.Parent = c end)
+            if ok and gui.Parent == c then return c end
+        end
+        if pg_ then
+            pcall(function() gui.Parent = pg_ end)
+            if gui.Parent == pg_ then return pg_ end
+        end
+        return nil
+    end
     local WHITELIST_SKIPS_KEY   = true   -- whitelisted users don't need to type the key
     local WHITELIST_ONLY_MODE   = false  -- true = ONLY whitelisted users can run the script at all
     local KICK_ON_FAIL          = true   -- true = kick from server if key is cancelled / failed / unwhitelisted
@@ -213,7 +241,7 @@ do
             d.TextColor3 = Color3.fromRGB(220, 230, 245)
             d.TextSize = 12
 
-            notifGui.Parent = targetHui
+            SafeParentGui(notifGui)
 
             pcall(function()
                 f:TweenPosition(UDim2.new(0.5, -180, 0, 22), Enum.EasingDirection.Out, Enum.EasingStyle.Quart, 0.45, true)
@@ -516,36 +544,8 @@ do
             passed = false
         end)
 
-        pcall(function() gui.Parent = parentGui end)
-        if not gui.Parent then gui.Parent = CoreGui_ end
+        SafeParentGui(gui)
 
-        local elapsed = 0
-        while not passed and not closed and elapsed < 60 do
-            task.wait(1)
-            elapsed = elapsed + 1
-            if not passed and not closed then
-                status.Text = "Key required (" .. tostring(60 - elapsed) .. "s left to enter key)"
-            end
-        end
-
-        pcall(function() gui:Destroy() end)
-
-        if passed then
-            __SUITE_PASSED = true
-        else
-            warn("[Suite] Access denied: Key was not entered. Kicking player.")
-            if KICK_ON_FAIL then
-                kickPlayer("You did not enter the required access key.\nPlease rejoin to try again.")
-            end
-            return
-        end
-    end
-end
-
--- Top-level hard execution barrier: absolutely NOTHING below runs if not passed
-if not __SUITE_PASSED then
-    return
-end
 
 if _G.DuelsSuiteCleanup then pcall(_G.DuelsSuiteCleanup) end
 
@@ -1175,10 +1175,60 @@ local watermarkFpsConn = nil
 
 local function getGuiParent()
     if type(gethui) == "function" then
-        local h = gethui()
-        if h then return h end
+        local ok, res = pcall(gethui)
+        if ok and res and typeof(res) == "Instance" then
+            local inGame = false
+            pcall(function() inGame = res:IsDescendantOf(game) end)
+            if inGame then
+                local test = Instance.new("Folder")
+                local canParent = pcall(function() test.Parent = res end)
+                pcall(function() test:Destroy() end)
+                if canParent then return res end
+            end
+        end
     end
+    if CoreGui then
+        local test = Instance.new("Folder")
+        local canParent = pcall(function() test.Parent = CoreGui end)
+        pcall(function() test:Destroy() end)
+        if canParent then return CoreGui end
+    end
+    local lp = Players.LocalPlayer
+    local pg = lp and (lp:FindFirstChildOfClass("PlayerGui") or lp:WaitForChild("PlayerGui", 5))
+    if pg then return pg end
     return CoreGui
+end
+
+local function safeParentGui(gui)
+    if not gui then return nil end
+    local candidates = {}
+    if type(gethui) == "function" then
+        local ok, h = pcall(gethui)
+        if ok and h and typeof(h) == "Instance" then
+            local inGame = false
+            pcall(function() inGame = h:IsDescendantOf(game) end)
+            if inGame then table.insert(candidates, h) end
+        end
+    end
+    if CoreGui then
+        table.insert(candidates, CoreGui)
+    end
+    local lp = Players.LocalPlayer or game:GetService("Players").LocalPlayer
+    local pg = lp and (lp:FindFirstChildOfClass("PlayerGui") or lp:FindFirstChild("PlayerGui"))
+    if pg then
+        table.insert(candidates, pg)
+    end
+    for _, c in ipairs(candidates) do
+        local ok = pcall(function() gui.Parent = c end)
+        if ok and gui.Parent == c then
+            return c
+        end
+    end
+    if pg then
+        pcall(function() gui.Parent = pg end)
+        if gui.Parent == pg then return pg end
+    end
+    return nil
 end
 
 pcall(function()
@@ -1254,7 +1304,7 @@ local function createWatermarkHUD()
         end
     end)
 
-    pcall(function() watermarkGui.Parent = targetHui end)
+    safeParentGui(watermarkGui)
 end
 createWatermarkHUD()
 
@@ -1445,7 +1495,17 @@ function DalxUI:CreateWindow(winConfig)
     notifyLayout.Padding = UDim.new(0, 6)
     self.NotifyContainer = notifyContainer
 
-    pcall(function() screenGui.Parent = targetHui end)
+    local parented = safeParentGui(screenGui)
+    if not parented then
+        warn("[DALX UI] Safe parenting failed. Forcing PlayerGui.")
+        pcall(function()
+            local lp = Players.LocalPlayer or game:GetService("Players").LocalPlayer
+            local pg = lp and (lp:FindFirstChildOfClass("PlayerGui") or lp:WaitForChild("PlayerGui", 5))
+            if pg then screenGui.Parent = pg end
+        end)
+    else
+        print("[DALX UI] Tactical menu parented successfully to: " .. tostring(parented:GetFullName()))
+    end
 
     function self:Toggle(forceState)
         if forceState ~= nil then
