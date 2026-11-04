@@ -24,6 +24,7 @@ local __SUITE_PASSED = false
         "pandasweetgirl15",
         "Amazingskywarssigma2",
         "eremCR10",
+        "only_ja88",
     }
     local WHITELIST_SKIPS_KEY   = true   -- whitelisted users don't need to type the key
     local WHITELIST_ONLY_MODE   = false  -- true = ONLY whitelisted users can run the script at all
