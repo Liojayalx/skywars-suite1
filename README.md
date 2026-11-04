@@ -1,7 +1,5 @@
 # 🛡️ Skywars Suite Studio (v3.2 Master Access Hub)
 
-**Live Studio Web App**: [https://liojayalx.github.io/skywars-suite1/](https://liojayalx.github.io/skywars-suite1/)
-
 **Skywars Suite Studio** is a dedicated web application and protection studio engineered specifically around the **Skywars Ultimate Master Suite** and Roblox Luau security.
 
 It integrates a real-time **Access Control & Key System Manager**, dynamic source code synthesizer, and a specialized **Roblox Luau Obfuscator** with instant synchronization to your executor and GitHub repository.
@@ -52,5 +50,3 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/Liojayalx/skywars-sui
 
 ## 🌐 Web Studio Access
 
-- **Online**: [https://liojayalx.github.io/skywars-suite1/](https://liojayalx.github.io/skywars-suite1/)
-- **Localhost**: `http://127.0.0.1:8080/`
