@@ -864,12 +864,15 @@ local CONFIG_FILE = CONFIG_FOLDER .. "/" .. tostring(LocalPlayer.UserId) .. ".js
 local ConfigKeyAliases = {
     ["Auto Mine"] = "AutoMineEnabled",
     ["Ore Auto Mine"] = "OreAutoMineEnabled",
+    ["Auto Bridge (Mine Behind, Place Front)"] = "MineBehindPlaceFront",
+    ["Auto Bridge"] = "MineBehindPlaceFront",
     ["Mine Behind, Place Front"] = "MineBehindPlaceFront",
     ["Hold Keybind Mode"] = "MineBehindHoldKey",
     ["3x3 Front Tunnel Mining"] = "BridgeTunnel3x3",
     ["BridgeTunnel3x3Toggle"] = "BridgeTunnel3x3",
     ["3x3 Tunnel"] = "BridgeTunnel3x3",
     ["Auto Jump While Bridging"] = "BridgeAutoJump",
+    ["Auto Jump"] = "BridgeAutoJump",
     ["BridgeAutoJumpToggle"] = "BridgeAutoJump",
     ["Auto-Pilot on Double-Tap"] = "BridgeAutoPilot",
     ["BridgeAutoPilotToggle"] = "BridgeAutoPilot",
@@ -4137,6 +4140,30 @@ local bridgeLockedFloorY = nil
 local bridgeLastDirX = 0
 local bridgeLastDirZ = 0
 
+local function triggerBridgeAutoJump(hum)
+    if not hum or hum.Health <= 0 then return end
+    if hum.FloorMaterial ~= Enum.Material.Air then
+        hum.Jump = true
+        local state = hum:GetState()
+        if state ~= Enum.HumanoidStateType.Jumping and state ~= Enum.HumanoidStateType.Freefall then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end
+
+-- Pre-physics Stepped connection to guarantee frame-perfect auto-jumping
+safeConnect(RunService.Stepped, function()
+    if not isSuiteActive or not Config.MineBehindPlaceFront or not Config.BridgeAutoJump then return end
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return end
+
+    local isMoving = (hum.MoveDirection.Magnitude > 0.1) or (bridgeAutoPilotActive and autoPilotMoveDir.Magnitude > 0.1)
+    if isMoving then
+        triggerBridgeAutoJump(hum)
+    end
+end)
+
 -- Frame-perfect continuous auto-pilot movement & auto-jumping (bunny-hop) while bridging
 safeConnect(RunService.Heartbeat, function()
     if not isSuiteActive or not Config.MineBehindPlaceFront then return end
@@ -4157,8 +4184,9 @@ safeConnect(RunService.Heartbeat, function()
 
     -- Continuous Auto-Jump (bunny hop) while moving
     if Config.BridgeAutoJump then
-        if (hum.MoveDirection.Magnitude > 0.1 or (bridgeAutoPilotActive and autoPilotMoveDir.Magnitude > 0.1)) and hum.FloorMaterial ~= Enum.Material.Air then
-            hum.Jump = true
+        local isMoving = (hum.MoveDirection.Magnitude > 0.1 or (bridgeAutoPilotActive and autoPilotMoveDir.Magnitude > 0.1))
+        if isMoving then
+            triggerBridgeAutoJump(hum)
         end
     end
 end)
@@ -4199,8 +4227,8 @@ safeSpawn(function()
                     or (humState == Enum.HumanoidStateType.Freefall)
 
                 -- Continuous Auto-Jump (Bunny Hop) while bridging
-                if Config.BridgeAutoJump and not isAirborne and (hum.FloorMaterial ~= Enum.Material.Air) then
-                    hum.Jump = true
+                if Config.BridgeAutoJump and not isAirborne then
+                    triggerBridgeAutoJump(hum)
                 end
 
                 -- Check solid ground at the raw foot level
@@ -6254,7 +6282,7 @@ farmLeft:Toggle({
 local preBridgeEquippedTool = nil
 
 MineBehindToggleObj = farmLeft:Toggle({
-    Name = "Mine Behind, Place Front",
+    Name = "Auto Bridge (Mine Behind, Place Front)",
     Default = false,
     Keybind = "MinePlaceFront",
     Callback = function(val)
@@ -6286,13 +6314,21 @@ MineBehindToggleObj = farmLeft:Toggle({
         end
         if Window and Window.Notify and not Config.MineBehindHoldKey then
             Window:Notify({
-                Title = "Infinite Bridge",
-                Description = val and "Mining block behind with pickaxe & placing in front." or "Mine Behind, Place Front disabled.",
+                Title = "Auto Bridge",
+                Description = val and "Auto Bridge active: placing runway ahead, auto jumping, and mining rear." or "Auto Bridge disabled.",
                 Lifetime = 2
             })
         end
     end
 }, "MineBehindPlaceFrontToggle")
+
+farmLeft:Toggle({
+    Name = "Auto Jump While Bridging",
+    Default = true,
+    Callback = function(val)
+        Config.BridgeAutoJump = val
+    end
+}, "BridgeAutoJumpToggle")
 
 farmLeft:Toggle({
     Name = "Hold Keybind Mode",
@@ -6310,14 +6346,6 @@ farmLeft:Toggle({
         toggleBridgeAutoPilot(val)
     end
 }, "BridgeAutoPilotToggle")
-
-farmLeft:Toggle({
-    Name = "Auto Jump While Bridging",
-    Default = true,
-    Callback = function(val)
-        Config.BridgeAutoJump = val
-    end
-}, "BridgeAutoJumpToggle")
 
 farmLeft:Toggle({
     Name = "3x3 Front Tunnel Mining",
@@ -6362,7 +6390,7 @@ farmLeft:Button({
 local farmRight = tabs.Skywars:Section({ Side = "Right", Title = "Mining Guidance" })
 farmRight:Paragraph({
     Header = "Automation Guidance",
-    Body = "• Auto Mine automatically focuses on and mines the closest collidable map block when you are holding your pickaxe.\n• Ore Auto Mine automatically locates and mines all rare ores in reach without needing to hold your pickaxe.\n• Mine Behind, Place Front builds an infinite bridge across the void by placing a block in front and mining the block behind.\n• 3x3 Front Tunnel Mining automatically bores a 3x3 tunnel through any walls, mountains or obstacle blocks ahead so your bridge continues uninterrupted."
+    Body = "• Auto Mine automatically focuses on and mines the closest collidable map block when you are holding your pickaxe.\n• Ore Auto Mine automatically locates and mines all rare ores in reach without needing to hold your pickaxe.\n• Auto Bridge (Mine Behind, Place Front) builds an infinite runway across the void with auto-jumping bunny hops, forward placement, and rear mining.\n• 3x3 Front Tunnel Mining automatically bores a 3x3 tunnel through any walls, mountains or obstacle blocks ahead so your bridge continues uninterrupted."
 })
 end)() -- Skywars Tab
 
@@ -7229,7 +7257,7 @@ local MASTER_KEYBIND_ITEMS = {
     -- Skywars & Farming
     { Key = "AutoMine", Name = "Auto Mine", Category = "Skywars", Desc = "Fast block break when holding pickaxe" },
     { Key = "OreAutoMine", Name = "Ore Auto Mine", Category = "Skywars", Desc = "Auto-targets and mines nearby ores" },
-    { Key = "MinePlaceFront", Name = "Mine Behind, Place Front", Category = "Skywars", Desc = "Mines rear block and bridges forward" },
+    { Key = "MinePlaceFront", Name = "Auto Bridge", Category = "Skywars", Desc = "Auto jumps, places runway ahead, and mines rear block" },
     { Key = "BridgeAutoPilot", Name = "Bridge Auto-Pilot", Category = "Skywars", Desc = "Hands-free continuous godbridging cruise" },
     { Key = "SafeTP", Name = "Safe Island TP", Category = "Skywars", Desc = "Teleports to safe platform above void" },
     { Key = "Rejoin", Name = "Rejoin Server", Category = "Skywars", Desc = "Rejoins current place instance" },
