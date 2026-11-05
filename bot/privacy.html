@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — LIO_ALX Discord Sentinel</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <a href="index.html" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+          <span class="bot-status-dot"></span>
+          <span class="brand-name">LIO_ALX</span>
+        </a>
+      </div>
+      <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="terms.html">Terms of Service</a>
+        <a href="privacy.html" class="active">Privacy Policy</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container document-wrapper">
+    <div class="doc-card">
+      <h1 class="doc-title">Privacy Policy</h1>
+      <p class="doc-meta">Last Updated: November 2026</p>
+
+      <section class="doc-section">
+        <h2>1. Introduction</h2>
+        <p>This Privacy Policy explains how <strong>LIO_ALX</strong> ("we", "our", or "the Bot") collects, uses, and safeguards information when added to a Discord server ("Guild"). We are committed to transparency and compliance with Discord's Developer Policy and applicable data protection regulations.</p>
+      </section>
+
+      <section class="doc-section">
+        <h2>2. Information We Collect</h2>
+        <p>LIO_ALX operates with strict data minimization principles. The only data processed or retained includes:</p>
+        <ul>
+          <li><strong>Discord User IDs & Guild IDs:</strong> Used as primary keys to associate leveling statistics (XP/Levels), warning infraction histories, and invite analytics.</li>
+          <li><strong>Invite Metadata:</strong> Number of regular joins, leaves, and inviter user IDs to power the <code>/invites</code> tracking service.</li>
+          <li><strong>Audit Log Records:</strong> Ephemeral action logs (e.g. channel deletion, role removal) analyzed in memory to detect rogue administrators or compromised bot accounts for Anti-Nuke defense.</li>
+          <li><strong>Message Content (Ephemeral Only):</strong> Analyzed transiently in memory for auto-moderation rules (invite links, mass mentions, rate-limiting spam) and XP assignment. <strong>Message content is never stored permanently or logged to disk.</strong></li>
+        </ul>
+      </section>
+
+      <section class="doc-section">
+        <h2>3. How We Use Information</h2>
+        <p>Data collected is strictly used for the execution of the Bot's core features:</p>
+        <ul>
+          <li>Delivering server security alerts and anti-nuke quarantines.</li>
+          <li>Maintaining user XP leaderboards and level milestones.</li>
+          <li>Logging disciplinary moderator actions (warnings, timeouts, kicks, bans).</li>
+          <li>Tracking server invitation credit for community members.</li>
+        </ul>
+      </section>
+
+      <section class="doc-section">
+        <h2>4. Data Storage and Security</h2>
+        <p>All persistent statistics are maintained within a secure, isolated database hosted on dedicated infrastructure. We do not sell, rent, monetize, or disclose user data to any external third parties or advertising networks.</p>
+      </section>
+
+      <section class="doc-section">
+        <h2>5. Data Retention and Deletion Requests</h2>
+        <p>When LIO_ALX is removed from a Discord server, all server-specific settings and infraction records can be purged upon request. Any user may request total deletion of their associated user statistics (XP, warnings, invite records) by contacting our development team via our official GitHub repository or Discord community.</p>
+      </section>
+
+      <section class="doc-section">
+        <h2>6. Contact Us</h2>
+        <p>If you have any questions or requests regarding this Privacy Policy, please open an issue or reach out via our GitHub profile: <a href="https://github.com/Liojayalx" target="_blank" rel="noopener">github.com/Liojayalx</a>.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-bottom">
+      <p>© 2026 LIO_ALX. All rights reserved. <a href="terms.html">Terms of Service</a> | <a href="privacy.html">Privacy Policy</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>
